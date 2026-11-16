@@ -1,0 +1,20 @@
+
+/* layout: the game canvas fills the whole viewport; A/B buttons float over it at 50% opacity */
+:root{--bg:#000;--fg:#e8ecff;--panel:#161b3a;--accent:#f2c94c;--line:#5a6bd1;color-scheme:dark}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--fg);font-family:"DotGothic16","MS Gothic",monospace}
+body{background:var(--bg);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#wrap{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);touch-action:none;background:#000}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+button{font:inherit;color:var(--fg);background:var(--panel);border:3px solid var(--line);border-radius:50%;opacity:.5;position:fixed;z-index:5;touch-action:manipulation;-webkit-tap-highlight-color:transparent;padding:0}
+button:active{background:var(--line)}button:focus-visible{outline:2px solid var(--accent)}
+.ab{width:78px;height:78px;font-size:28px}
+:root{--base:max(64px,env(safe-area-inset-bottom,0px))}
+#cross,#bB{visibility:hidden}
+#bB{right:max(24px,env(safe-area-inset-right,0px));bottom:calc(var(--base) + 40px)}
+#cross{position:fixed;z-index:4;left:50%;bottom:var(--base);width:160px;height:160px;transform:translateX(-50%);pointer-events:none;opacity:.5;border-radius:50%;background:var(--panel);border:3px solid var(--line);box-sizing:border-box}
+#cross .ring{position:absolute;inset:26px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+#knob{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:var(--line);border:3px solid #cfd8ff;box-sizing:border-box;transition:transform .08s}
+#cross.act #knob{background:var(--accent);border-color:#fff}
+#hg{top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));width:40px;height:40px;font-size:20px;border-radius:8px}
+#bk{top:max(10px,env(safe-area-inset-top,0px));right:calc(max(10px,env(safe-area-inset-right,0px)) + 48px);width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+#mp{top:max(10px,env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center}
