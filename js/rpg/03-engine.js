@@ -56,7 +56,15 @@ document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k;
   b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up)});
 // ---- ui helpers ----
 function txt(s,x,y,col='#fff',size=16){g.font=size+'px '+FONT;g.textBaseline='top';g.fillStyle='#000';g.fillText(s,x+1,y+1);g.fillStyle=col;g.fillText(s,x,y)}
-function win(x,y,w,h){g.fillStyle='#000';g.fillRect(x-2,y-2,w+4,h+4);g.fillStyle='#fff';g.fillRect(x,y,w,h);g.fillStyle='#0a0a60';g.fillRect(x+3,y+3,w-6,h-6)}
+function rrect(x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function win(x,y,w,h){const r=10;g.save();
+  g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=14;g.shadowOffsetY=4;rrect(x,y,w,h,r);g.fillStyle='#0b1226';g.fill();g.shadowColor='transparent';
+  const gr=g.createLinearGradient(0,y,0,y+h);gr.addColorStop(0,'rgba(24,40,72,.94)');gr.addColorStop(1,'rgba(8,14,32,.96)');
+  rrect(x,y,w,h,r);g.fillStyle=gr;g.fill();
+  g.lineWidth=2.5;g.strokeStyle='#d9b24a';rrect(x+1,y+1,w-2,h-2,r);g.stroke();
+  g.lineWidth=1;g.strokeStyle='rgba(120,150,230,.55)';rrect(x+5,y+5,w-10,h-10,r-4);g.stroke();
+  g.fillStyle='#f2c94c';[[x+7,y+7],[x+w-7,y+7],[x+7,y+h-7],[x+w-7,y+h-7]].forEach(c=>{g.beginPath();g.moveTo(c[0],c[1]-3);g.lineTo(c[0]+3,c[1]);g.lineTo(c[0],c[1]+3);g.lineTo(c[0]-3,c[1]);g.closePath();g.fill()});
+  g.restore()}
 function lines(s,x,y,lh=22,col){s.split('\n').forEach((l,i)=>txt(l,x,y+i*lh,col))}
 const push=s=>S.scenes.push(s), pop=()=>S.scenes.pop();
 // message window with typewriter; pages = array of strings; cb after
