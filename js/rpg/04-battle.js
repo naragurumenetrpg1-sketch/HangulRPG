@@ -2,7 +2,8 @@
 function startBattle(id,opt={}){
   const e=Object.assign({},ENEMIES[id]);e.mhp=e.hp;let turn=0,log=[],busy=false,shake=0,flash=0,eHit=0,T0=0,fx=[],pts=[],fl=[],eFlash=0,lunge=0,sshake=0;
   const whiteCache=new Map();const whiteOf=a=>{if(whiteCache.has(a))return whiteCache.get(a);const w=a.naturalWidth||a.width,h=a.naturalHeight||a.height,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(a,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='#fff';x.fillRect(0,0,w,h);whiteCache.set(a,c);return c};
-  const EC=()=>{const eh=Math.min(260,LH*.3);return[LW/2,LH/2+eh/2-eh*.5,LH/2+eh/2,eh]};
+  const ecx=()=>isLand()?LW*.28:LW/2;
+  const EC=()=>{const eh=Math.min(260,LH*.3);return[ecx(),LH/2+eh/2-eh*.5,LH/2+eh/2,eh]};
   const burst=(x,y,n,cols,sp,life)=>{for(let i=0;i<n;i++){const an=Math.random()*Math.PI*2,v=(.3+Math.random())*sp;pts.push({x,y,vx:Math.cos(an)*v,vy:Math.sin(an)*v-sp*.2,t:0,life:(life||.6)*(.6+Math.random()*.6),c:cols[(Math.random()*cols.length)|0],s:2+Math.random()*4})}};
   const floatTxt=(s,x,y,col,size)=>fl.push({s,x,y,col,size:size||34,t:0,life:1});
   const H=S.hero;H.hp=H.mhp;
@@ -12,7 +13,7 @@ function startBattle(id,opt={}){
         if(bi&&bi.naturalWidth){const k=Math.max(LW/bi.naturalWidth,LH/bi.naturalHeight),w=bi.naturalWidth*k,h=bi.naturalHeight*k;g.imageSmoothingEnabled=false;g.drawImage(bi,(LW-w)/2,(LH-h)/2,w,h)}
         else{const gr=g.createLinearGradient(0,0,0,LH);gr.addColorStop(0,'#1a1830');gr.addColorStop(1,'#34344f');g.fillStyle=gr;g.fillRect(0,0,LW,LH)}}
       g.imageSmoothingEnabled=false;
-      const eh=Math.min(260,LH*.3),ey=LH/2+eh/2,cx=LW/2;
+      const eh=Math.min(260,LH*.3),ey=LH/2+eh/2,cx=ecx();
       if(e.hp>0||eHit>0){const sx=shake>0?(Math.random()*8-4):0;g.globalAlpha=e.hp>0?1:Math.max(0,eHit);
         const a=MON_ART[e.art];if(a&&(a.naturalWidth||a.getContext)){const w0=a.naturalWidth||a.width,h0=a.naturalHeight||a.height,sc=Math.min(300/w0,eh/h0);
           const s2=1+lunge*.35+(e.hp<=0?(1-eHit)*.3:0),bob=e.hp>0?Math.sin(T0*2.2)*3:0,dw=w0*sc*s2,dh=h0*sc*s2;g.drawImage(a,cx-dw/2+sx,ey-dh+bob,dw,dh);if(eFlash>0){g.globalAlpha=Math.min(1,eFlash)*(e.hp>0?1:Math.max(0,eHit));g.drawImage(whiteOf(a),cx-dw/2+sx,ey-dh+bob,dw,dh)}}g.globalAlpha=1}
@@ -23,7 +24,7 @@ function startBattle(id,opt={}){
         g.fillStyle='#000';g.fillRect(bx-2,by-2,bw+4,14);g.fillStyle='#401010';g.fillRect(bx,by,bw,10);g.fillStyle=e.hp/e.mhp>.5?'#4ec24e':e.hp/e.mhp>.25?'#e0c040':'#e04040';g.fillRect(bx,by,Math.round(bw*Math.max(0,e.hp)/e.mhp),10)}
       // hero status (top-left) and log (top-right)
       win(10,10,150,100);txt(H.name+' Lv'+H.lv,22,20);txt('HP '+String(H.hp).padStart(3,' '),22,50);txt('MP '+String(H.mp).padStart(3,' '),22,78);
-      {const lw=Math.min(LW-20,460),lx=(LW-lw)/2,ly=ey+54;win(lx,ly,lw,100);lines(B.log.slice(-3).join('\n'),lx+14,ly+10,28)}
+      {const land=isLand(),lw=land?Math.min(440,LW*.5):Math.min(LW-20,460),lx=land?Math.max(200,cx-lw/2):cx-lw/2,ly=ey+54;win(lx,ly,lw,100);lines(B.log.slice(-3).join('\n'),lx+14,ly+10,28)}
       g.restore()},
     update(dt){T0+=dt;shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt*2);eFlash=Math.max(0,eFlash-dt*3.5);lunge=Math.max(0,lunge-dt*3.2);sshake=Math.max(0,sshake-dt);if(e.hp<=0)eHit=Math.max(0,eHit-dt*1.5);
     fx.forEach(f=>f.t+=dt);fx=fx.filter(f=>f.t<f.dur);pts.forEach(p=>{p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt});pts=pts.filter(p=>p.t<p.life);fl.forEach(f=>f.t+=dt*1.1);fl=fl.filter(f=>f.t<f.life)}};
