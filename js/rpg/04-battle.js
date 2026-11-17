@@ -24,7 +24,7 @@ function startBattle(id,opt={}){
         g.fillStyle='#000';g.fillRect(bx-2,by-2,bw+4,14);g.fillStyle='#401010';g.fillRect(bx,by,bw,10);g.fillStyle=e.hp/e.mhp>.5?'#4ec24e':e.hp/e.mhp>.25?'#e0c040':'#e04040';g.fillRect(bx,by,Math.round(bw*Math.max(0,e.hp)/e.mhp),10)}
       // hero status (top-left) and log (top-right)
       win(10,10,150,100);txt(H.name+' Lv'+H.lv,22,20);txt('HP '+String(H.hp).padStart(3,' '),22,50);txt('MP '+String(H.mp).padStart(3,' '),22,78);
-      {const land=isLand(),lw=land?Math.min(440,LW*.5):Math.min(LW-20,460),lx=land?Math.max(200,cx-lw/2):cx-lw/2,ly=ey+54;win(lx,ly,lw,100);lines(B.log.slice(-3).join('\n'),lx+14,ly+10,28)}
+      {const land=isLand(),lw=land?Math.min(440,LW*.5):Math.min(LW-20,460),lx=land?Math.max(10,cx-lw/2):cx-lw/2,ly=ey+54;win(lx,ly,lw,100);lines(B.log.slice(-3).join('\n'),lx+14,ly+10,28)}
       g.restore()},
     update(dt){T0+=dt;shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt*2);eFlash=Math.max(0,eFlash-dt*3.5);lunge=Math.max(0,lunge-dt*3.2);sshake=Math.max(0,sshake-dt);if(e.hp<=0)eHit=Math.max(0,eHit-dt*1.5);
     fx.forEach(f=>f.t+=dt);fx=fx.filter(f=>f.t<f.dur);pts.forEach(p=>{p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt});pts=pts.filter(p=>p.t<p.life);fl.forEach(f=>f.t+=dt*1.1);fl=fl.filter(f=>f.t<f.life)}};
