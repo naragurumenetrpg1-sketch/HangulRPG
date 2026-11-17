@@ -2,12 +2,17 @@
 const TS=16;
 const cv=document.getElementById('c'), g=cv.getContext('2d'), wrapEl=document.getElementById('wrap');
 let LW=512, LH=448, WS=2, RES=0; // logical canvas size follows the screen shape; WS = world zoom
-function resize(){const W=wrapEl.clientWidth||512,H=wrapEl.clientHeight||448,a=H/W;
+let landMode=false; // true only on RPG play and the 一問一答 screens
+function landOK(){try{if(PRACTICING)return true;if(!S.started)return false;return !S.scenes.some(s=>s.noland)}catch(e){return false}}
+function resize(){const W0=wrapEl.clientWidth||512,H=wrapEl.clientHeight||448;landMode=landOK();
+  const W=landMode?Math.min(W0,Math.round(H*1.5)):W0; // landscape: cap the play field at 3:2 so it is not too flat; the black bars hold the pad
+  cv.style.width=W+'px';cv.style.marginLeft=Math.round((W0-W)/2)+'px';
+  const a=H/W;
   if(a>=448/512){LW=512;LH=Math.min(1400,Math.round(512*a))}else{LH=448;LW=Math.min(1400,Math.round(448/a))}
   WS=(LW===512&&LH>800)?3:2;let coarse=false;try{coarse=matchMedia('(pointer:coarse)').matches}catch(e){}
   RES=coarse?Math.min(Math.round(292*LH/H),Math.max(0,LH-448)):0;cv.width=LW;cv.height=LH;g.imageSmoothingEnabled=false}
 addEventListener('resize',resize);resize();
-const isLand=()=>LW/LH>1.6; // landscape: canvas is much wider than tall
+const isLand=()=>landMode&&LW/LH>1.3; // landscape layout (RPG / 一問一答 only)
 // UI scenes are laid out in a 512x448 box: a=anchor of that box inside the canvas
 function boxOff(a){const cx=(LW-512)/2;return a==='n'?[0,0]:a==='b'?[cx,LH-448-RES]:a==='t'?[cx,0]:[cx,(LH-448)/2]}
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
