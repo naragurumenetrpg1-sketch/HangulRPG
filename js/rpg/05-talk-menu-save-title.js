@@ -54,7 +54,7 @@ function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVEKEY));if(!d)
   Object.assign(S,{started:true,comps:d.comps||[],trail:[],map:d.map,x:d.x,y:d.y,dir:d.dir,hero:d.hero,items:d.items,flags:d.flags,chests:d.chests,learned:d.learned||{},stats:d.stats||{},seen:d.seen||{},cleared:d.cleared||{}});rollAll(d.seed||7);const sc=tileAt(S.map,S.x,S.y);if(townIdx(S.map)>=0&&'OKNThvpZ'.includes(sc)){const st={village:[10,17],village2:[9,16],village3:[10,17]}[S.map];if(st){S.x=st[0];S.y=st[1]}}NPCS.cave2[0].gone=!!S.flags.boss;return true}catch(e){return false}}
 function hasSave(){try{return !!localStorage.getItem(SAVEKEY)}catch(e){return false}}
 function title(){let t=0,i=0;const opts=(hasSave()?['最初から','続きから（'+saveInfo()+'）']:['最初から']).concat(['ホームに戻る']);AUDIO.play(null);
-  const sc={a:'n',nopad:true,tap(lx,ly){const j=menuHit(lx,ly,opts.length);if(j>=0){i=j;this.key('a')}},draw(){drawTitleBG();menuDraw(opts,i)},
+  const sc={a:'n',nopad:true,noland:true,tap(lx,ly){const j=menuHit(lx,ly,opts.length);if(j>=0){i=j;this.key('a')}},draw(){drawTitleBG();menuDraw(opts,i)},
     update(dt){t+=dt},
     key(k){if(k==='b'){AUDIO.se('ok');home();return}if(k==='up'||k==='down')i=(i+1)%opts.length;else if(k==='a'){AUDIO.se('ok');
       if(i===opts.length-1){home();return}
