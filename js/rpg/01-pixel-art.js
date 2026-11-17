@@ -2,6 +2,7 @@
 const TS=16;
 const cv=document.getElementById('c'), g=cv.getContext('2d'), wrapEl=document.getElementById('wrap');
 let LW=512, LH=448, WS=2, RES=0; // logical canvas size follows the screen shape; WS = world zoom
+let INSET_L=0,INSET_R=0; // logical px of the play field covered by the pad (left) / B button (right) on phones
 let landMode=false; // true only on RPG play and the 一問一答 screens
 function landOK(){try{if(PRACTICING)return true;if(!S.started)return false;return !S.scenes.some(s=>s.noland)}catch(e){return false}}
 function resize(){const W0=wrapEl.clientWidth||512,H=wrapEl.clientHeight||448;landMode=landOK();
@@ -10,8 +11,13 @@ function resize(){const W0=wrapEl.clientWidth||512,H=wrapEl.clientHeight||448;la
   const a=H/W;
   if(a>=448/512){LW=512;LH=Math.min(1400,Math.round(512*a))}else{LH=448;LW=Math.min(1400,Math.round(448/a))}
   WS=(LW===512&&LH>800)?3:2;let coarse=false;try{coarse=matchMedia('(pointer:coarse)').matches}catch(e){}
-  RES=coarse?Math.min(Math.round(292*LH/H),Math.max(0,LH-448)):0;cv.width=LW;cv.height=LH;g.imageSmoothingEnabled=false}
-addEventListener('resize',resize);resize();
+  RES=coarse?Math.min(Math.round(292*LH/H),Math.max(0,LH-448)):0;cv.width=LW;cv.height=LH;g.imageSmoothingEnabled=false;
+  INSET_L=INSET_R=0;if(landMode&&coarse&&LW/LH>1.3){const r=cv.getBoundingClientRect(),sc=r.width/LW||1;INSET_L=Math.max(0,Math.round((134-r.left)/sc));INSET_R=Math.max(0,Math.round((r.right-(innerWidth-82))/sc))}}
+addEventListener('resize',resize);
+addEventListener('orientationchange',()=>[0,120,350,800].forEach(t=>setTimeout(resize,t)));
+if(window.visualViewport)visualViewport.addEventListener('resize',resize);
+if(window.ResizeObserver)new ResizeObserver(()=>resize()).observe(wrapEl);
+resize();
 const isLand=()=>landMode&&LW/LH>1.3; // landscape layout (RPG / 一問一答 only)
 // UI scenes are laid out in a 512x448 box: a=anchor of that box inside the canvas
 function boxOff(a){const cx=(LW-512)/2;return a==='n'?[0,0]:a==='b'?[cx,LH-448-RES]:a==='t'?[cx,0]:[cx,(LH-448)/2]}
