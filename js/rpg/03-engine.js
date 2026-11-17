@@ -75,7 +75,7 @@ function say(pages,cb){if(typeof pages==='string')pages=[pages];pages=pages.flat
     key(k){if(k!=='a'&&k!=='b')return;const p=pages[pi];if(ci<p.length){ci=p.length;sc._c=p.length;return}
       AUDIO.se('ok');if(pi<pages.length-1){pi++;ci=0;sc._c=0}else{pop();cb&&cb()}},a:'b'};push(sc);AUDIO.se('talk')}
 // vertical choice menu
-function choose(opts,cb,o={}){let i=0;const ba=S.scenes[S.scenes.length-1].a,an=o.a||(ba==='n'?'t':ba)||'t';const w=o.w||150,x=(o.x===10&&o.a==='n'&&isLand())?LW-w-14:(o.x??340),h=opts.length*28+24,y=o.bot!==undefined?LH-h-o.bot:(o.y??250);
+function choose(opts,cb,o={}){let i=0;const ba=S.scenes[S.scenes.length-1].a,an=o.a||(ba==='n'?'t':ba)||'t';const w=o.w||150,x=(o.x===10&&o.a==='n'&&isLand())?LW-w-14-INSET_R:(o.x??340),h=opts.length*28+24,y=o.bot!==undefined?LH-h-o.bot:(o.y??250);
   push({draw(){win(x,y,w,h);opts.forEach((s,j)=>txt((j===i?'▶':'  ')+s,x+12,y+12+j*28))},
    key(k){if(k==='up')i=(i+opts.length-1)%opts.length;else if(k==='down')i=(i+1)%opts.length;
     else if(k==='a'){AUDIO.se('ok');pop();cb(i)}else if(k==='b'&&o.cancel!==false){pop();cb(-1)}},
