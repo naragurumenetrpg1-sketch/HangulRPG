@@ -1,6 +1,6 @@
 // ===== 8. main loop =====
 let last=performance.now();
-function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(landOK()!==landMode)resize();
   const top=S.scenes[S.scenes.length-1];if(top&&top.update)top.update(dt);
   g.imageSmoothingEnabled=false;S.scenes.forEach(s=>{const o=boxOff(s.a||'c');g.save();g.translate(o[0],o[1]);s.draw&&s.draw();g.restore()});requestAnimationFrame(frame)}
 function boot(){title();home();requestAnimationFrame(frame)}
