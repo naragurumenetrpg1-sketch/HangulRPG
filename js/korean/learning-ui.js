@@ -176,16 +176,13 @@ function vocabList(){let hi=0,top=0;const cur=()=>VOC[HEROES[hi].id].w.map(wobj)
       if(ly>=l.by-6){const bw=(LW-2*l.m)/3,k=Math.floor((lx-l.m)/bw);if(k===0)this.key('b');else if(k===1)top=Math.max(0,top-per);else if(k===2)top=Math.min(Math.max(0,n-per),top+per);return}
       if(ly<l.hy+l.hh+6){this.key(lx<LW/2?'left':'right');return}
       if(ly>(l.ly+l.by)/2)top=Math.min(Math.max(0,n-per),top+per);else top=Math.max(0,top-per)}})}
-function drawTitleBG(){g.fillStyle='#000';g.fillRect(0,0,LW,LH);const im=IMGS.title_bg;if(!im||!im.naturalWidth)return;
-  if(isLand()){const cs=Math.max(LW/im.naturalWidth,LH/im.naturalHeight);g.save();g.globalAlpha=.4;g.drawImage(im,(LW-im.naturalWidth*cs)/2,(LH-im.naturalHeight*cs)/2,im.naturalWidth*cs,im.naturalHeight*cs);g.restore();g.fillStyle='rgba(0,8,6,.55)';g.fillRect(0,0,LW,LH);
-    const sc=LH/im.naturalHeight,w=im.naturalWidth*sc,x=LW*.28-w/2;g.drawImage(im,x,0,w,LH);g.strokeStyle='#d9b24a';g.lineWidth=2;g.strokeRect(x,1,w,LH-2);return}
-  const sc=LH>LW?Math.max(LW/im.naturalWidth,LH/im.naturalHeight):Math.min(LW/im.naturalWidth,LH/im.naturalHeight);const w=im.naturalWidth*sc,h=im.naturalHeight*sc;g.drawImage(im,(LW-w)/2,(LH-h)/2,w,h)}
-function menuGeom(n){const h=Math.max(44,LH*.062),gap=Math.max(10,LH*.012),w=Math.min(LW*.78,420),x=(LW-w)/2,y0=LH*(LH>LW?.545:.46);if(isLand()){const ww=Math.min(LW*.4,400);return{h:Math.max(44,LH*.11),gap:Math.max(10,LH*.025),w:ww,x:LW*.66-ww/2,y0:LH*.3}}return{h,gap,w,x,y0}}
+function drawTitleBG(){g.fillStyle='#000';g.fillRect(0,0,LW,LH);const im=IMGS.title_bg;if(!im||!im.naturalWidth)return;const sc=LH>LW?Math.max(LW/im.naturalWidth,LH/im.naturalHeight):Math.min(LW/im.naturalWidth,LH/im.naturalHeight);const w=im.naturalWidth*sc,h=im.naturalHeight*sc;g.drawImage(im,(LW-w)/2,(LH-h)/2,w,h)}
+function menuGeom(n){const h=Math.max(44,LH*.062),gap=Math.max(10,LH*.012),w=Math.min(LW*.78,420),x=(LW-w)/2,y0=LH*(LH>LW?.545:.46);return{h,gap,w,x,y0}}
 function menuHit(lx,ly,n){const m=menuGeom(n);for(let j=0;j<n;j++){const y=m.y0+j*(m.h+m.gap);if(ly>=y&&ly<=y+m.h&&lx>=m.x&&lx<=m.x+m.w)return j}return -1}
 function menuDraw(opts,i){const m=menuGeom(opts.length);opts.forEach((s,j)=>{const y=m.y0+j*(m.h+m.gap),on=j===i;g.save();if(on){g.shadowColor='#f2c94c';g.shadowBlur=14}g.beginPath();g.moveTo(m.x+14,y);g.arcTo(m.x+m.w,y,m.x+m.w,y+m.h,14);g.arcTo(m.x+m.w,y+m.h,m.x,y+m.h,14);g.arcTo(m.x,y+m.h,m.x,y,14);g.arcTo(m.x,y,m.x+m.w,y,14);g.closePath();g.fillStyle=on?'rgba(28,48,38,.97)':'rgba(6,16,14,.94)';g.fill();g.restore();g.lineWidth=2;g.strokeStyle=on?'#f2c94c':'#6fbf93';g.stroke();
     g.font='26px '+FONT;const tw=g.measureText(s).width;g.save();g.textBaseline='middle';const cy=y+m.h/2+1;g.fillStyle='#000';g.fillText(s,m.x+(m.w-tw)/2+1,cy+1);g.fillStyle=on?'#fff2b0':'#e8fff0';g.fillText(s,m.x+(m.w-tw)/2,cy);if(on){g.fillStyle='#f2c94c';g.fillText('▶',m.x+16,cy)}g.restore()})}
 function home(){let i=0;const opts=['RPGで遊ぶ','韓国語一覧','韓国語一問一答'];
-  push({a:'n',nopad:true,draw(){drawTitleBG();menuDraw(opts,i)},
+  push({a:'n',nopad:true,noland:true,draw(){drawTitleBG();menuDraw(opts,i)},
     tap(lx,ly){const j=menuHit(lx,ly,3);if(j>=0){i=j;this.key('a')}},
     key(k){if(k==='up')i=(i+2)%3;else if(k==='down')i=(i+1)%3;else if(k==='a'){AUDIO.se('ok');if(i===0)pop();else if(i===1)vocabList();else practiceMenu()}}})}
 
@@ -198,11 +195,12 @@ function practice(hi,list){const H=HEROES[hi],P=VOC[H.id].w.map(wobj);
     const mine=pickDistractors(P.map(x=>x.m),w.m);q={w,opts:shuffle([w.m,...mine])};sel=-1;cur=0;qt=performance.now()};
   const fit=(s,max,size)=>{g.font=size+'px '+FONT;while(size>10&&g.measureText(s).width>max){size--;g.font=size+'px '+FONT}return size};
   const ctr=(s,y,col,size,max)=>{size=fit(s,max||LW-40,size);const w=g.measureText(s).width;T(s,(LW-w)/2,y,col,size)};
+  const cc=(s,y,col,size,max)=>{const l=L();size=fit(s,Math.min(max||LW-40,l.qw-30),size);const w=g.measureText(s).width;T(s,l.m+l.qw/2-w/2,y,col,size)};
   const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
   const box=(x,y,w,h,line,bg,glow)=>{g.save();if(glow){g.shadowColor=line;g.shadowBlur=14}rr(x,y,w,h,14);g.fillStyle=bg;g.fill();g.restore();rr(x,y,w,h,14);g.lineWidth=2;g.strokeStyle=line;g.stroke()};
   const btn=(x,y,w,h,label,col,bg,size=18)=>{g.save();g.shadowColor='rgba(0,0,0,.4)';g.shadowBlur=8;g.shadowOffsetY=3;rr(x,y,w,h,14);g.fillStyle=bg;g.fill();g.restore();rr(x,y,w,h,14);g.lineWidth=2;g.strokeStyle=col;g.stroke();const sz=fit(label,w-16,size);const tw=g.measureText(label).width;T(label,x+(w-tw)/2,y+(h-sz)/2-1,col==='#aab'?'#cfd6ff':col,sz)};
-  const L=()=>{const m=16,W=LW,Hh=LH;const hy=Hh*.05,hh=Math.max(64,Hh*.07),cy=hy+hh+Hh*.02,qh=Hh*.28,ch=cy+qh+Hh*.028,ah=Hh*.08,gap=Hh*.012,bh=Math.max(48,Hh*.06),by=Hh-Hh*.06-bh;
-    return{m,W,Hh,hy,hh,cy,qh,ch,ah,bh,by,ax:m,aw:W-2*m,ay:j=>ch+j*(ah+gap)}};
+  const L=()=>{const m=16,W=LW,Hh=LH;if(isLand()){const hy=12,hh=58,cy=hy+hh+10,bh=48,by=Hh-12-bh,qh=by-10-cy,qw=Math.min(W*.4,400),gap=10,ah=(qh-3*gap)/4,ax=m+qw+14;return{m,W,Hh,hy,hh,cy,qh,qw,ch:cy,ah,bh,by,ax,aw:W-m-ax,ay:j=>cy+j*(ah+gap),land:true}}const hy=Hh*.05,hh=Math.max(64,Hh*.07),cy=hy+hh+Hh*.02,qh=Hh*.28,ch=cy+qh+Hh*.028,ah=Hh*.08,gap=Hh*.012,bh=Math.max(48,Hh*.06),by=Hh-Hh*.06-bh;
+    return{m,W,Hh,hy,hh,cy,qh,ch,ah,bh,by,ax:m,aw:W-2*m,ay:j=>ch+j*(ah+gap),qw:W-2*m,land:false}};
   const back=()=>{PRACTICING=false;pop()};
   const answer=j=>{if(phase!=='q')return;sel=j;const w=q.w;const good=q.opts[j]===w.m;phase='a';qa=performance.now();tot++;AUDIO.se(good?'chest':'no');if(good)ok++;else if(!wrong.find(x=>x.k===w.k))wrong.push(w);
     if(tot%10===0){toast=tot+'問目！';tt=1.8}};
@@ -219,16 +217,16 @@ function practice(hi,list){const H=HEROES[hi],P=VOC[H.id].w.map(wobj);
   push({a:'n',update(dt){if(tt>0)tt-=dt},draw(){const l=L();const gr=g.createLinearGradient(0,0,0,LH);gr.addColorStop(0,'#0f2268');gr.addColorStop(.5,'#0a1650');gr.addColorStop(1,'#10236e');g.fillStyle=gr;g.fillRect(0,0,LW,LH);const rg=g.createRadialGradient(LW*.15,0,10,LW*.15,0,LW*.9);rg.addColorStop(0,'rgba(80,110,220,.25)');rg.addColorStop(1,'rgba(80,110,220,0)');g.fillStyle=rg;g.fillRect(0,0,LW,LH);
       box(l.m,l.hy,LW-2*l.m,l.hh,'#2a3a85','rgba(10,20,70,.6)');T(THEME_K(H.id),l.m+18,l.hy+10,'#e8ecff',20);const pg='正答率 '+(tot?Math.round(ok*100/tot)+'%':'--%');g.font='18px '+FONT;T(pg,LW-l.m-18-g.measureText(pg).width,l.hy+11,'#cde',18);
       const bx=l.m+18,bw=LW-2*l.m-36,by2=l.hy+l.hh-18;g.fillStyle='#34407f';rr(bx,by2,bw,8,4);g.fill();const fr=((tot%10)+(phase==='a'&&tot%10===0?10:0))/10;if(fr>0){g.fillStyle='#f2c94c';rr(bx,by2,Math.max(8,bw*fr),8,4);g.fill()}
-      box(l.m,l.cy,LW-2*l.m,l.qh,'#4a5aa8','rgba(10,20,80,.55)');const w=q.w;
-      if(phase==='q'){ctr('この韓国語の意味は？',l.cy+l.qh*.12,'#9fb0ff',16);ctr(w.k,l.cy+l.qh*.36,'#fff',64,LW-70)}
-      else{ctr(w.k+'  ('+w.r+')',l.cy+l.qh*.1,'#fff',24,LW-70);const good=q.opts[sel]===w.m;ctr(good?'正解！':'残念…',l.cy+l.qh*.38,good?'#7ee07e':'#ff8a8a',34);ctr('答え：'+w.m,l.cy+l.qh*.72,good?'#7ee07e':'#ffd0d0',18)}
+      box(l.m,l.cy,l.qw,l.qh,'#4a5aa8','rgba(10,20,80,.55)');const w=q.w;
+      if(phase==='q'){cc('この韓国語の意味は？',l.cy+l.qh*.12,'#9fb0ff',16);cc(w.k,l.cy+l.qh*.36,'#fff',64,LW-70)}
+      else{cc(w.k+'  ('+w.r+')',l.cy+l.qh*.1,'#fff',24,LW-70);const good=q.opts[sel]===w.m;cc(good?'正解！':'残念…',l.cy+l.qh*.38,good?'#7ee07e':'#ff8a8a',34);cc('答え：'+w.m,l.cy+l.qh*.72,good?'#7ee07e':'#ffd0d0',18)}
       q.opts.forEach((o,j)=>{const y=l.ay(j);let line='#3d4a9a',bg='rgba(12,24,84,.85)',col='#fff',glow=false;if(phase==='a'){if(o===w.m){line='#7ee07e';bg='#0d3a1c';col='#7ee07e'}else if(j===sel){line='#ff8a8a';bg='#3a0d12';col='#ff8a8a'}else{line='#99a';col='#99a'}}else if(j===cur){line='#f2c94c';col='#fff';glow=true}
         box(l.ax,y,l.aw,l.ah,line,bg,glow);
         if(phase==='q'){const sz=fit(o,l.aw-80,24);if(j===cur)T('▶',l.ax+18,y+(l.ah-24)/2,'#f2c94c',24);T(o,l.ax+(j===cur?56:26),y+(l.ah-sz)/2-1,col,sz)}
         else{const f=korOf(o);const sz=fit(o,l.aw-50,20);const y0=y+(l.ah-sz-(f?18:0))/2;T(o,l.ax+26,y0,col,sz);if(f)T(f.k+'  '+f.r,l.ax+26,y0+sz+5,col,13)}});
-      btn(l.m,l.by,150,l.bh,'やめる','#aab','#2a3a85',20);if(phase==='a')ctr('タップで次へ ▶',l.cy+l.qh*.88,'#f2c94c',15);
+      btn(l.m,l.by,150,l.bh,'やめる','#aab','#2a3a85',20);if(phase==='a')cc('タップで次へ ▶',l.cy+l.qh*.88,'#f2c94c',15);
       btn(LW-l.m-210,l.by,210,l.bh,'間違えた問題 '+wrong.length,wrong.length?'#ff8a8a':'#aab',wrong.length?'#4a1a30':'#2a3a85',16);
-      if(tt>0){g.save();g.globalAlpha=Math.min(1,tt/.8)*.9;const sz=40;g.font=sz+'px '+FONT;const tw=g.measureText(toast).width,ty=(L().ay(3)+L().ah+L().by)/2-sz/2;T(toast,LW/2-tw/2,ty,'#f2c94c',sz);g.restore()}},
+      if(tt>0){g.save();g.globalAlpha=Math.min(1,tt/.8)*.9;const sz=40;g.font=sz+'px '+FONT;const tw=g.measureText(toast).width,ty=L().land?L().hy+(L().hh-sz)/2:(L().ay(3)+L().ah+L().by)/2-sz/2;T(toast,LW/2-tw/2,ty,'#f2c94c',sz);g.restore()}},
     key(k){if(k==='b'){back();return}
       if(phase==='a'){if(k==='a')nextQ();return}
       if(k==='up')cur=(cur+3)%4;else if(k==='down')cur=(cur+1)%4;else if(k==='a')answer(cur)},
