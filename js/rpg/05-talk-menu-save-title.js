@@ -1,5 +1,5 @@
 // ===== 6. talk / shop / menu / save / title =====
-function talk(n){const H=S.hero;if(n.id!=='guard')S.seen['n'+S.map+':'+n.x+','+n.y]=1;const tp=teachPage(n);
+function talk(n){const WHO=({elder:'ちょうろう',inn:'やどや',shop:'どうぐや'})[n.id]||((n.id==='guard'||n.id==='boss')?null:'むらびと'),say=(pg,c)=>sayAs(pg,c,WHO);const H=S.hero;if(n.id!=='guard')S.seen['n'+S.map+':'+n.x+','+n.y]=1;const tp=teachPage(n);
   if(n.id==='guard'){const vi=Math.max(0,townIdx(S.map)),f='g'+S.map+n.w;if(tp&&!S.flags[f]){S.flags[f]=1;say(['門番「そうだ、ひとつ おしえてやろう。」',tp],()=>guardCheck(vi))}else guardCheck(vi);return}
   if(n.t){say(tp?[n.t,tp]:n.t);return}
   if(n.id==='inn'){say(tp?['ようこそ やどやへ！',tp,'ひとばん 10Gですが おとまりに なりますか？']:'ようこそ やどやへ！\nひとばん 10Gですが おとまりに なりますか？',()=>choose(['はい','いいえ'],i=>{
