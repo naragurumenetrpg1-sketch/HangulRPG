@@ -11,21 +11,29 @@ function quiz(w,cb,o={}){
   const PL=o.P||pool(),korOf=m=>{let f=PL.find(x=>x.m===m);if(f)return f;for(const k in VOC){const a=VOC[k].w.find(x=>x[2]===m);if(a)return wobj(a)}return null};
   const ds=pickDistractors(PL.map(x=>x.m),w.m);if(ds.length<3)ds.push(...pickDistractors(allMeanings().filter(m=>!ds.includes(m)),w.m,3-ds.length));
   const opts=shuffle([w.m,...ds]);let i=0,res=null,t=0;
-  const PH=156,geo=()=>{const L=isLand()&&!o.practice,pw=L?Math.min(460,LW-LW*.28-114):Math.min(LW-20,460);return{pw,px:L?LW-pw-24:(LW-pw)/2,py:LH/2-PH/2}};
-  const cell=j=>{const G=geo();return[G.px+16+(j%2)*(G.pw/2),G.py+84+((j/2)|0)*36]};
+  const PH=236,BH=36,geo=()=>{const L=isLand()&&!o.practice,pw=L?Math.min(460,LW-LW*.28-114):Math.min(LW-20,460);return{pw,px:L?LW-pw-24:(LW-pw)/2,py:LH/2-PH/2}};
+  const bw=G=>(G.pw-42)/2,cell=j=>{const G=geo();return[G.px+16+(j%2)*(bw(G)+10),G.py+144+((j/2)|0)*(BH+8)]};
+  const fitT=(s,max,size)=>{g.font=size+'px '+FONT;while(size>10&&g.measureText(s).width>max){size--;g.font=size+'px '+FONT}return size};
+  const midT=(s,cx,y,col,size,max)=>{size=fitT(s,max,size);txt(s,cx-g.measureText(s).width/2,y,col,size)};
   const pick=j=>{if(res!==null)return;i=j;res=opts[j]===w.m;if(!o.practice){const s=S.stats[w.k]||(S.stats[w.k]={ok:0,ng:0});S.learned[w.k]=1;res?s.ok++:s.ng++;opts.forEach(op=>{const f=korOf(op);if(f)S.learned[f.k]=1})}AUDIO.se(res?'chest':'no');t=0};
-  push({a:'n',draw(){const G=geo();g.globalAlpha=.92;win(G.px,G.py,G.pw,PH);g.globalAlpha=1;
-      if(res===null){txt('この かんこくごの いみは？',G.px+16,G.py+10,'#9fb0ff',14);txt(w.k,G.px+16,G.py+30,'#fff',34)}
-      else{txt(w.k+'  ('+w.r+')',G.px+16,G.py+8,'#fff',20);txt(res?'せいかい！  '+w.m:'ざんねん…  こたえは『'+w.m+'』',G.px+16,G.py+42,res?'#7ee07e':'#ff8a8a',18)}
-      opts.forEach((op,j)=>{const[x,y]=cell(j);let col='#fff';if(res!==null)col=op===w.m?'#7ee07e':(j===i?'#ff8a8a':'#99a');
-        if(res===null)txt((j===i?'▶ ':'  ')+op,x,y,col,op.length>9?14:18);
-        else{const f=korOf(op);txt((j===i?'▶ ':'  ')+op,x,y-6,col,op.length>9?13:16);if(f)txt('  '+f.k+'  '+f.r,x,y+14,col,11)}});
-      if(res!==null&&o.practice)txt('タップで つぎへ',G.px+G.pw-112,G.py+12,'#9ac',11)},
+  push({a:'n',draw(){const G=geo(),W2=bw(G),cx=G.px+G.pw/2;
+      g.fillStyle='rgba(0,0,0,.32)';g.fillRect(0,0,LW,LH);g.globalAlpha=.96;win(G.px,G.py,G.pw,PH);g.globalAlpha=1;
+      const hs=res===null?'この かんこくごの いみは？':'（'+w.r+'）';g.font='13px '+FONT;const hw=g.measureText(hs).width+26;
+      g.fillStyle='rgba(159,176,255,.16)';rrect(cx-hw/2,G.py+14,hw,22,11);g.fill();txt(hs,cx-hw/2+13,G.py+18,'#9fb0ff',13);
+      midT(w.k,cx,G.py+46,'#fff',52,G.pw-40);
+      if(res!==null)midT(res?'せいかい！':'ざんねん…',cx,G.py+108,res?'#7ee07e':'#ff8a8a',20,G.pw-40);
+      opts.forEach((op,j)=>{const[x,y]=cell(j),sel=j===i&&res===null,ok=res!==null&&op===w.m,ng=res!==null&&j===i&&op!==w.m;
+        rrect(x,y,W2,BH,9);g.fillStyle=ok?'rgba(70,200,110,.28)':ng?'rgba(230,80,80,.28)':sel?'rgba(242,201,76,.18)':'rgba(255,255,255,.06)';g.fill();
+        g.lineWidth=sel?2.5:1.5;g.strokeStyle=ok?'#7ee07e':ng?'#ff8a8a':sel?'#f2c94c':'rgba(120,140,220,.55)';g.stroke();
+        const col=res===null?'#fff':(ok?'#c8f7c8':ng?'#ffd0d0':'#99a');
+        if(res===null)midT(op,x+W2/2,y+9,col,18,W2-20);
+        else{midT(op,x+W2/2,y+4,col,15,W2-16);const f=korOf(op);if(f)midT(f.k+'  '+f.r,x+W2/2,y+22,col,10,W2-16)}});
+      if(res!==null&&o.practice)txt('タップで つぎへ',G.px+G.pw-104,G.py+18,'#9ac',11)},
     update(dt){if(res!==null){t+=dt;if(!o.practice&&t>1.3)this.done()}},
     done(){if(this._d)return;this._d=1;pop();cb(res)},
     key(k){if(res!==null){if(k==='a'&&t>.3)this.done();return}
       if(k==='left'&&i%2)i--;else if(k==='right'&&i%2===0)i++;else if(k==='up'&&i>1)i-=2;else if(k==='down'&&i<2)i+=2;else if(k==='a')pick(i)},
-    tap(lx,ly){if(res!==null){if(t>.3)this.done();return}const G=geo();for(let j=0;j<4;j++){const[x,y]=cell(j);if(lx>=x-10&&lx<=x+G.pw/2-8&&ly>=y-8&&ly<=y+32){if(i===j)pick(j);else i=j;return}}}})}
+    tap(lx,ly){if(res!==null){if(t>.3)this.done();return}const G=geo(),W2=bw(G);for(let j=0;j<4;j++){const[x,y]=cell(j);if(lx>=x-4&&lx<=x+W2+4&&ly>=y-4&&ly<=y+BH+4){if(i===j)pick(j);else i=j;return}}}})}
 // teaching: villagers pass on one word of the hero's theme
 const SPOTS=[[0,1,2,3,4,5,6,9,10,11,12,13,14,15,16,7,8],[0,1,2,3,4,5,6,7,8,9,10,13,14,15,16,17,18],[0,1,2,3,4,5,6,7,8,9,10,13,14,15,16,17,18]];
 function teachPage(n){if(n.w===undefined)return null;const p=pool(),ti=townIdx(S.map),vi=ti<0?0:ti,pm=S.perm&&S.perm[vi],ix=SPOTS[vi].indexOf(n.w);if(ix<0)return null;const q=pm&&pm[ix]!==undefined?pm[ix]:ix;
