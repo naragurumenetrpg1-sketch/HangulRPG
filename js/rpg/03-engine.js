@@ -68,12 +68,17 @@ function win(x,y,w,h){const r=10;g.save();
 function lines(s,x,y,lh=22,col){s.split('\n').forEach((l,i)=>txt(l,x,y+i*lh,col))}
 const push=s=>S.scenes.push(s), pop=()=>S.scenes.pop();
 // message window with typewriter; pages = array of strings; cb after
-function say(pages,cb){if(typeof pages==='string')pages=[pages];pages=pages.flatMap(p=>String(p).split('\f'));let pi=0,ci=0,t=0;
-  const sc={draw(){win(16,316,480,120);const p=pages[pi];const shown=p.slice(0,ci);lines(shown,34,330,26);
-      if(ci>=p.length&&((t*2)|0)%2===0)txt('▼',474,408)},
+function say(pages,cb,who){if(typeof pages==='string')pages=[pages];pages=pages.flatMap(p=>String(p).split('\f'));let pi=0,ci=0,t=0;
+  const sc={draw(){win(16,316,480,120);const p=pages[pi],shown=p.slice(0,ci);
+      let fs=18;g.font=fs+'px '+FONT;const mw=Math.max(...p.split('\n').map(l=>g.measureText(l).width));if(mw>440)fs=Math.max(12,Math.floor(fs*440/mw));
+      shown.split('\n').forEach((l,i)=>txt(l,34,332+i*(fs+10),'#fff',fs));
+      if(who){g.font='15px '+FONT;const tw=g.measureText(who).width+28;g.save();g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=8;rrect(28,297,tw,28,8);g.fillStyle='#0f1a36';g.fill();g.restore();
+        g.lineWidth=2;g.strokeStyle='#d9b24a';rrect(28,297,tw,28,8);g.stroke();txt(who,42,303,'#f2c94c',15)}
+      if(ci>=p.length){const by=Math.sin(t*6)*2;g.fillStyle='#f2c94c';g.beginPath();g.moveTo(466,401+by);g.lineTo(480,401+by);g.lineTo(473,410+by);g.closePath();g.fill()}},
     update(dt){t+=dt;sc._c=(sc._c||0)+dt*45;ci=Math.floor(Math.min(pages[pi].length,sc._c))},
     key(k){if(k!=='a'&&k!=='b')return;const p=pages[pi];if(ci<p.length){ci=p.length;sc._c=p.length;return}
       AUDIO.se('ok');if(pi<pages.length-1){pi++;ci=0;sc._c=0}else{pop();cb&&cb()}},a:'b'};push(sc);AUDIO.se('talk')}
+const sayAs=say;
 // vertical choice menu
 function choose(opts,cb,o={}){let i=0;const ba=S.scenes[S.scenes.length-1].a,an=o.a||(ba==='n'?'t':ba)||'t';const w=o.w||150,x=(o.x===10&&o.a==='n'&&isLand())?LW-w-14-INSET_R:(o.x??340),h=opts.length*28+24,y=o.bot!==undefined?LH-h-o.bot:(o.y??250);
   push({draw(){win(x,y,w,h);opts.forEach((s,j)=>txt((j===i?'▶':'  ')+s,x+12,y+12+j*28))},
