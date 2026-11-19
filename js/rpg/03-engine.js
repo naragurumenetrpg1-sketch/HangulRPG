@@ -107,8 +107,22 @@ function decoKey(ch,x,y){const h=((x*73856093)^(y*19349663))>>>0,f=S.map==='fiel
     if(f){if(r<4)return'tr'+(1+h%5);if(r<8)return'fir'+(1+h%4);if(r<9)return['cher1','cher2'][h%2];return'dead'+(1+h%4)}
     if(r<8)return'tr'+(1+h%5);if(r<9)return'fir'+(1+h%4);return['cher1','cher2'][h%2]}
   const L=f?['bush1','bush2','bush3','rock1','rock2','rock3','tuft1','tuft2']:['bush1','bush2','bush3','tuft1','tuft2','o_shrubb','o_shruba'];return L[h%L.length]}
+// ---- HD-2D style lighting for towns: cast shadows (light from the upper left), soft contact shadows, vignette ----
+let _sh=false;               // true only while a town is being drawn
+const TOWN_VIGNETTE=true;
+// building: a soft parallelogram thrown to the right along the ground (pre-rendered once per image) + contact shade at the wall's foot
+function bldShadow(im){if(im._bs)return im._bs;const w=im.naturalWidth/2*.92,h=im.naturalHeight/2,d=15,dx=Math.round(h*.75),dy=Math.round(h*.1),pad=9,ox=pad+8,oy=pad+d,k=2;
+  const cv=document.createElement('canvas');cv.width=(ox+dx+pad)*k;cv.height=(oy+dy+pad)*k;const q=cv.getContext('2d');q.scale(k,k);try{q.filter='blur(5px)'}catch(e){}
+  q.fillStyle='#0b1230';q.beginPath();q.moveTo(ox-8,oy-d);q.lineTo(ox+dx,oy-d+dy);q.lineTo(ox+dx,oy+dy);q.lineTo(ox-8,oy);q.closePath();q.fill();return im._bs={c:cv,ox,oy,w}}
+function drawBldShadow(im,bx,by,a){if(!im||!im.naturalWidth)return;const s=bldShadow(im);g.save();g.globalAlpha=a;g.drawImage(s.c,bx+s.w/2-s.ox,by-s.oy,s.c.width/2,s.c.height/2);
+  const gr=g.createLinearGradient(0,by-1,0,by+5);gr.addColorStop(0,'rgba(8,14,36,.32)');gr.addColorStop(1,'rgba(8,14,36,0)');g.globalAlpha=1;g.fillStyle=gr;g.fillRect(bx-s.w/2,by-1,s.w,6);g.restore()}
+function treeShadow(im,bx,by,a){if(!im||!im.naturalWidth)return;const w=im.naturalWidth/2,r=w*.42;g.save();g.translate(bx+w*.14,by-1);g.scale(1,.3);const gr=g.createRadialGradient(0,0,0,0,0,r);
+  gr.addColorStop(0,'rgba(8,14,36,'+a+')');gr.addColorStop(.7,'rgba(8,14,36,'+a*.55+')');gr.addColorStop(1,'rgba(8,14,36,0)');g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,7);g.fill();g.restore()}
+function cshadow(cx,by){if(!_sh)return;g.save();g.translate(cx+1.5,by);g.scale(1,.38);const gr=g.createRadialGradient(0,0,0,0,0,9);gr.addColorStop(0,'rgba(8,14,36,.55)');gr.addColorStop(.6,'rgba(8,14,36,.3)');gr.addColorStop(1,'rgba(8,14,36,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(0,0,9,0,7);g.fill();g.restore()}
+function vignette(){if(!TOWN_VIGNETTE)return;g.save();g.translate(LW/2,LH/2);g.scale(LW,LH);const gr=g.createRadialGradient(0,0,.3,0,0,.74);gr.addColorStop(0,'rgba(6,8,28,0)');gr.addColorStop(1,'rgba(6,8,28,.5)');g.fillStyle=gr;g.fillRect(-.5,-.5,1,1);g.restore()}
 function drawWorld(){
-  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M();const VW=LW/(TS*WS),VH=LH/(TS*WS);
+  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),TOWN=S.map.startsWith('village');_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
   let px=S.x,py=S.y;if(S.mv){px+=(S.mv.tx-S.x)*S.mv.t;py+=(S.mv.ty-S.y)*S.mv.t}
   let cx=px+.5-VW/2,cy=py+.5-VH/2;
   S.cam=[Math.round(cx*TS),Math.round(cy*TS)];g.save();g.scale(WS,WS);g.translate(-S.cam[0],-S.cam[1]);
@@ -128,9 +142,11 @@ function drawWorld(){
       else if(ch==='W'&&h%6===0){const up=tileAt(S.map,x,y-1)==='W',k=(up?['stag','stac','crys','deadb','glowc','fung']:['stag','stac','glowc','fung'])[h%(up?6:4)];deco.push({y:y+.9,f:()=>spr(k,x,y)})}
       else if(ch==='<'||ch==='>'){const k=ch==='>'?'st_f':'st_a';deco.push({y:y+.1,f:()=>spr(k,x,y,'#fff')})}}
     if(ch==='^'&&S.map==='field'&&((x<16?x%2===0:x%2===1))&&y%2===1){const k=(y===1&&(x%4===0||x%4===1))||((x*5+y*3)%7===0)?'mt4':'mt1';deco.push({y:y+.5,f:()=>spr(k,x,y)})}
-    if(ch==='T'||ch==='Z'){const k=decoKey(ch,x,y);deco.push({y:y+.9,f:()=>spr(k,x,y)})}
+    if(ch==='T'||ch==='Z'){const k=decoKey(ch,x,y);deco.push({y:y+.9,f:()=>spr(k,x,y),sh:[k,x,y]})}
     else if(ch==='F')spr(['o_pink','o_purple','fl_w','fl_m','fl_b'][((x*7+y*3)*5>>2)%5],x,y);else if(DK[ch])spr(DK[ch],x,y,(ch==='X'||((ch==='O'||ch==='K')&&S.map.startsWith('village')&&!S.seen[S.map+x+','+y])||((ch==='V'||ch==='H')&&WARPS[S.map+':'+x+','+y]))?'#fff':null)}
-  const ents=(BLD[S.map]||[]).map(b=>{const im=IMGS['b_'+b.k];return{y:b.y-.5,f:()=>{if(im.complete&&im.naturalWidth)g.drawImage(im,b.x*TS+8-im.naturalWidth/2,(b.y+1)*TS-im.naturalHeight)}}}).concat(deco).concat((NPCS[S.map]||[]).filter(n=>!n.gone).map(n=>({y:n.y,f:()=>{if(n.h){const ha=IMGS['hero_'+n.h];if(ha&&ha.naturalWidth){outl(ha,0,0,52,44,n.x*TS+8-13,(n.y+1)*TS-23,26,22,ncol(n));return}}const im=n.i&&IMGS[n.i];if(im&&im.naturalWidth){const w=im.naturalWidth/2,h=im.naturalHeight/2;outl(im,0,0,im.naturalWidth,im.naturalHeight,n.x*TS+8-w/2,(n.y+1)*TS-1-h,w,h,ncol(n))}else drawChar(g,n.x*TS,n.y*TS-2,SPR[n.s]||SPR.vill,0,0)}})));
+  if(TOWN){(BLD[S.map]||[]).forEach(b=>drawBldShadow(IMGS['b_'+b.k],b.x*TS+8,(b.y+1)*TS,.52));
+    deco.forEach(d=>{if(d.sh)treeShadow(IMGS[d.sh[0]],d.sh[1]*TS+8,(d.sh[2]+1)*TS,.42)})}
+  const ents=(BLD[S.map]||[]).map(b=>{const im=IMGS['b_'+b.k];return{y:b.y-.5,f:()=>{if(im.complete&&im.naturalWidth)g.drawImage(im,b.x*TS+8-im.naturalWidth/2,(b.y+1)*TS-im.naturalHeight)}}}).concat(deco).concat((NPCS[S.map]||[]).filter(n=>!n.gone).map(n=>({y:n.y,f:()=>{cshadow(n.x*TS+8,(n.y+1)*TS-2);if(n.h){const ha=IMGS['hero_'+n.h];if(ha&&ha.naturalWidth){outl(ha,0,0,52,44,n.x*TS+8-13,(n.y+1)*TS-23,26,22,ncol(n));return}}const im=n.i&&IMGS[n.i];if(im&&im.naturalWidth){const w=im.naturalWidth/2,h=im.naturalHeight/2;outl(im,0,0,im.naturalWidth,im.naturalHeight,n.x*TS+8-w/2,(n.y+1)*TS-1-h,w,h,ncol(n))}else drawChar(g,n.x*TS,n.y*TS-2,SPR[n.s]||SPR.vill,0,0)}})));
   ents.push({y:py,f:()=>drawHero(px,py)});
   (S.comps||[]).forEach((c,k)=>{const tr=S.trail||[],a=tr[k]||tr[tr.length-1]||{x:S.x,y:S.y},b=k===0?{x:S.x,y:S.y}:(tr[k-1]||a),t=S.mv?Math.min(1,S.mv.t):0,fx=a.x+(b.x-a.x)*t,fy=a.y+(b.y-a.y)*t,ddx=b.x-a.x,ddy=b.y-a.y,dd=ddy>0?0:ddy<0?1:ddx<0?2:ddx>0?3:(a.d!==undefined?a.d:S.dir);ents.push({y:fy-.01*(k+1),f:()=>drawHeroCls(c,fx,fy,dd,!!S.mv&&(ddx||ddy))})});
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
@@ -139,11 +155,11 @@ function drawWorld(){
      if(ch==='D'||(WARPS[S.map+':'+x+','+y]&&ch!=='.'&&ch!=='_'&&!'VH<>'.includes(ch)))box(x,y,'#fff')}
    for(const k in WARPS){if(k.indexOf(S.map+':')===0){const[x,y]=k.split(':')[1].split(',').map(Number);if(x>=x0&&x<x1&&y>=y0&&y<y1&&!'VH<>'.includes(tileAt(S.map,x,y)))box(x,y,'#fff')}}
   }
-  g.restore();
+  g.restore();_sh=false;if(TOWN)vignette();
   if(m.name){/* location tag */}
 }
 function drawHero(px,py){drawHeroCls(S.hero.cls||0,px,py,S.dir,!!S.mv)}
-function drawHeroCls(cls,px,py,dir,moving){const im=heroImg(cls);
+function drawHeroCls(cls,px,py,dir,moving){cshadow(px*TS+8,(py+1)*TS-2);const im=heroImg(cls);
   if(!im||!(im.naturalWidth||im.width)){drawChar(g,Math.round(px*TS),Math.round(py*TS)-2,SPR.hero,dir,moving&&S.mv&&S.mv.t>.25&&S.mv.t<.75?1:0);return}
   const row=moving?(S.step?1:2):0,col=dir===0?0:dir===1?1:2,x=Math.round(px*TS+8-13),y=Math.round((py+1)*TS-23);
   if(dir===2){g.save();g.translate(x+26,y);g.scale(-1,1);g.drawImage(im,col*52,row*44,52,44,0,0,26,22);g.restore()}
