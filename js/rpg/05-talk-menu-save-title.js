@@ -31,8 +31,10 @@ function shopMenu(){const H=S.hero;
       else if(it[0][0]==='w'){H.wpn=+it[0][1];msg=it[1]+'を そうびした！ こうげき +'+WPN[H.wpn][1]}
       else{H.arm=+it[0][1];msg=it[1]+'を そうびした！ しゅび +'+ARM[H.arm][1]}}}})}
 function openMenu(){if(S.mv)return;AUDIO.se('ok');
-  choose(['つよさ','どうぐ','じゅもん','たんごちょう','セーブ'],i=>{
-    if(i===0)status();else if(i===1)useItem();else if(i===2)fieldSpell();else if(i===3)bookScene();else if(i===4)save()},{x:16,y:16,w:190})}
+  const it=['つよさ','どうぐ','じゅもん','たんごちょう','きろく','セーブ'];if(canSpeak())it.push('はつおん '+(voiceOn()?'ON':'OFF'));
+  choose(it,i=>{
+    if(i===0)status();else if(i===1)useItem();else if(i===2)fieldSpell();else if(i===3)bookScene();else if(i===4)recordScene();else if(i===5)save();
+    else if(i===6){setVoice(!voiceOn());if(voiceOn())speakKo('안녕하세요');openMenu()}},{x:16,y:16,w:190})}
 function status(){const H=S.hero;
   push({a:'t',tap(){this.key('b')},draw(){win(150,16,346,300);txt(H.name+' '+HEROES[H.cls||0].job+' Lv'+H.lv,170,30,'#f2c94c');
     lines(`HP  ${H.hp} / ${H.mhp}\nMP  ${H.mp} / ${H.mmp}\nこうげき ${ATK()}\nしゅび   ${DEF()}\nけいけんち ${H.exp}\nつぎのLvまで ${need(H.lv)-H.exp}\nぶき ${WPN[H.wpn][0]}\nぼうぐ ${ARM[H.arm][0]}\n${H.gold} G`,170,62,27)},
