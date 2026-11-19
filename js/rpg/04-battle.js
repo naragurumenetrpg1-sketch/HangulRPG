@@ -2,6 +2,7 @@
 function startBattle(id,opt={}){
   const e=Object.assign({},ENEMIES[id]);e.mhp=e.hp;let turn=0,log=[],busy=false,shake=0,flash=0,eHit=0,T0=0,fx=[],pts=[],fl=[],eFlash=0,lunge=0,sshake=0;
   const whiteCache=new Map();const whiteOf=a=>{if(whiteCache.has(a))return whiteCache.get(a);const w=a.naturalWidth||a.width,h=a.naturalHeight||a.height,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(a,0,0);x.globalCompositeOperation='source-atop';x.fillStyle='#fff';x.fillRect(0,0,w,h);whiteCache.set(a,c);return c};
+  const rev=[];const qz=cb=>{const w=pickWord(battlePool());quiz(w,ok=>{rev.push([w,ok]);cb(ok)})};
   const ecx=()=>isLand()?LW*.28:LW/2;
   const EC=()=>{const eh=Math.min(260,LH*.3);return[ecx(),LH/2+eh/2-eh*.5,LH/2+eh/2,eh]};
   const burst=(x,y,n,cols,sp,life)=>{for(let i=0;i<n;i++){const an=Math.random()*Math.PI*2,v=(.3+Math.random())*sp;pts.push({x,y,vx:Math.cos(an)*v,vy:Math.sin(an)*v-sp*.2,t:0,life:(life||.6)*(.6+Math.random()*.6),c:cols[(Math.random()*cols.length)|0],s:2+Math.random()*4})}};
@@ -56,12 +57,12 @@ function startBattle(id,opt={}){
     let ups=[];while(H.exp>=need(H.lv)){H.exp-=need(H.lv);H.lv++;H.mhp+=7;H.mp+=2;H.mmp+=2;H.atk+=2;H.def+=2;H.hp=H.mhp;H.mp=H.mmp;ups.push('レベルが '+H.lv+' に あがった！')}
     if(H.lv>=2&&!S.flags.heal&&ups.length&&H.lv===2){S.flags.heal=1;ups.push('ホイミを おぼえた！')}
     if(H.lv>=3&&!S.flags.fire){S.flags.fire=1;ups.push('ファイアを おぼえた！')}
-    H.hp=H.mhp;wait(1200,()=>{pop();if(ups.length){AUDIO.se('lvup');say(ups)}})}
+    H.hp=H.mhp;wait(1200,()=>{pop();const miss=rev.filter(r=>!r[1]).map(r=>r[0]),after=()=>{if(ups.length){AUDIO.se('lvup');say(ups)}};if(miss.length)reviewCard(miss,after);else after()})}
   function lose(){pop();AUDIO.play(null);say(['ユウは ちからつきた…','めのまえが まっくらに なった…'],()=>{
     S.hero.gold=Math.floor(S.hero.gold/2);fadeTo(()=>{S.map='village';S.x=10;S.y=17;S.dir=0;H.hp=H.mhp;H.mp=H.mmp;AUDIO.play('town')},()=>say('おお ゆうしゃよ しんでしまうとは なにごとじゃ！\nおかねを はんぶん うしなったが\nなんとか いきかえった。'))})}
   function menu(){if(busy||H.hp<=0||e.hp<=0)return;
     choose(['たたかう','じゅもん','どうぐ','にげる'],i=>{
-      if(i===0){quiz(pickWord(battlePool()),ok=>{msg(H.name+'の こうげき！');
+      if(i===0){qz(ok=>{msg(H.name+'の こうげき！');
         if(!ok){msg('しかし ことばが でてこない！');msg('こうげきは はずれた！');AUDIO.se('no');{const[ex,ecy,,eh]=EC();floatTxt('MISS',ex,ecy,'#c8c8d8',36)}wait(750,enemyTurn);return}
         AUDIO.se('hit');const crit=Math.random()<.08;let d=Math.ceil(e.mhp/e.need);if(crit){d*=2;msg('かいしんの いちげき！')}hitEnemy(d,crit?'crit':'hit')})}
       else if(i===1)spellMenu();
@@ -73,7 +74,7 @@ function startBattle(id,opt={}){
     choose(sp,i=>{if(i<0)return;const name=sp[i].split(' ')[0],cost=name==='ホイミ'?3:4;
       if(H.mp<cost){msg('MPが たりない！');return}H.mp-=cost;
       if(name==='ホイミ'){const v=22+(Math.random()*6|0);H.hp=Math.min(H.mhp,H.hp+v);floatTxt('+'+v,85,86,'#7ee07e',34);burst(85,60,18,['#7ee07e','#c8ffc8'],90,.7);msg(H.name+'は ホイミを となえた！');msg('HPが '+v+' かいふくした！');AUDIO.se('heal');wait(700,enemyTurn)}
-      else{quiz(pickWord(battlePool()),ok=>{msg(H.name+'は ファイアを となえた！');
+      else{qz(ok=>{msg(H.name+'は ファイアを となえた！');
         if(!ok){msg('ことばを まちがえて');msg('じゅもんが きえてしまった！');AUDIO.se('no');{const[ex,ecy]=EC();floatTxt('MISS',ex,ecy,'#c8c8d8',36)}wait(750,enemyTurn);return}
         AUDIO.se('fire');const d=Math.ceil(e.mhp/e.need)*2;hitEnemy(d,'fire')})}
     },{x:10,bot:12,w:170,a:'n'})}
