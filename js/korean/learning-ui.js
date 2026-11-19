@@ -4,7 +4,29 @@ const allMeanings=()=>{const o=[];for(const k in VOC)VOC[k].w.forEach(a=>o.push(
 const similar=(a,b)=>{if(a===b)return true;const cl=x=>x.replace(/[（(].*?[）)]/g,'').replace(/[？?！!。・]/g,'').replace(/(ですか|ください|ましたか|ました|ますか|ます|です|ている|する)/g,'');const n=cl(a),m=cl(b);if(n.length<2||m.length<2||(/^\d/.test(n)&&/^\d/.test(m)))return n===m;if(n===m)return true;const K=/[\u4e00-\u9fff0-9]/;for(let L=Math.min(n.length,m.length);L>=2;L--){for(let i=0;i+L<=n.length;i++){const sub=n.substr(i,L);if(m.includes(sub)&&(L>=3||K.test(sub)))return true}}return false};
 const pickDistractors=(ms,m,n=3)=>{const c=[...new Set(ms.filter(x=>x!==m))];const ok=shuffle(c.filter(x=>!similar(x,m)));const out=ok.slice(0,n);if(out.length<n)out.push(...shuffle(c.filter(x=>!out.includes(x))).slice(0,n-out.length));return out};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-function weight(w){const s=S.stats[w.k]||{ok:0,ng:0};return Math.max(.3,1+2*s.ng-.3*s.ok)}
+// ---- pronunciation (Web Speech API, ko-KR) ----
+const VOICE_KEY='lumina-voice';
+const voiceOn=()=>{try{return localStorage.getItem(VOICE_KEY)!=='0'}catch(e){return true}};
+const setVoice=v=>{try{localStorage.setItem(VOICE_KEY,v?'1':'0')}catch(e){}};
+const canSpeak=()=>typeof speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined';
+let _koVoice=null;
+function speakKo(text){if(!canSpeak())return false;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=.8;
+  if(!_koVoice)_koVoice=(speechSynthesis.getVoices()||[]).find(v=>/^ko/i.test(v.lang))||null;if(_koVoice)u.voice=_koVoice;speechSynthesis.speak(u);return true}catch(e){return false}}
+const autoSpeak=text=>{if(voiceOn())speakKo(text)};
+function drawSpeaker(x,y,r=14,col='#cfd8ff'){g.save();g.fillStyle='rgba(159,176,255,.18)';g.beginPath();g.arc(x,y,r,0,7);g.fill();g.lineWidth=1.5;g.strokeStyle='rgba(159,176,255,.6)';g.stroke();
+  g.fillStyle=col;g.beginPath();g.moveTo(x-7,y-3);g.lineTo(x-3,y-3);g.lineTo(x+2,y-7);g.lineTo(x+2,y+7);g.lineTo(x-3,y+3);g.lineTo(x-7,y+3);g.closePath();g.fill();
+  g.lineWidth=1.6;g.strokeStyle=col;g.beginPath();g.arc(x+2,y,5,-.9,.9);g.stroke();g.beginPath();g.arc(x+2,y,9,-.9,.9);g.stroke();g.restore()}
+// ---- study streak (kept apart from the save data so it survives a new game) ----
+const STREAK_KEY='lumina-streak';
+const dstr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const ystr=()=>{const d=new Date();d.setDate(d.getDate()-1);return dstr(d)};
+function streakGet(){try{return Object.assign({last:'',n:0,best:0,today:0},JSON.parse(localStorage.getItem(STREAK_KEY))||{})}catch(e){return{last:'',n:0,best:0,today:0}}}
+function streakTouch(){try{const d=streakGet(),t=dstr(new Date());if(d.last!==t){d.n=d.last===ystr()?d.n+1:1;d.last=t;d.today=0}d.today++;d.best=Math.max(d.best,d.n);localStorage.setItem(STREAK_KEY,JSON.stringify(d))}catch(e){}}
+function streakInfo(){const d=streakGet(),t=dstr(new Date());return{n:(d.last===t||d.last===ystr())?d.n:0,best:d.best,today:d.last===t?d.today:0}}
+// ---- spaced review: Leitner-style boxes. A wrong answer drops a word to box 0; right answers move it up and make it rarer ----
+const BOX_IV=[0,.5,2,8,24]; // hours before a word counts as "due" again
+const statBox=s=>s.box!=null?s.box:(s.ok>s.ng?Math.min(2,s.ok-s.ng):0);
+function weight(w){const s=S.stats[w.k]||{ok:0,ng:0},b=statBox(s);let x=[3,2,1.3,.8,.4][b]+.3*Math.min(s.ng||0,5);if(s.last&&(Date.now()-s.last)/36e5>BOX_IV[b])x*=1.5;return Math.max(.3,x)}
 function pickWord(list,exclude=[]){const L=list.filter(w=>!exclude.includes(w.k));const src=L.length?L:list;let tot=0;src.forEach(w=>tot+=weight(w));let r=Math.random()*tot;for(const w of src){r-=weight(w);if(r<=0)return w}return src[0]}
 const knownWords=()=>pool().filter(w=>S.learned[w.k]);
 function quiz(w,cb,o={}){
@@ -15,11 +37,14 @@ function quiz(w,cb,o={}){
   const bw=G=>(G.pw-42)/2,cell=j=>{const G=geo();return[G.px+16+(j%2)*(bw(G)+10),G.py+144+((j/2)|0)*(BH+8)]};
   const fitT=(s,max,size)=>{g.font=size+'px '+FONT;while(size>10&&g.measureText(s).width>max){size--;g.font=size+'px '+FONT}return size};
   const midT=(s,cx,y,col,size,max)=>{size=fitT(s,max,size);txt(s,cx-g.measureText(s).width/2,y,col,size)};
-  const pick=j=>{if(res!==null)return;i=j;res=opts[j]===w.m;if(!o.practice){const s=S.stats[w.k]||(S.stats[w.k]={ok:0,ng:0});S.learned[w.k]=1;res?s.ok++:s.ng++;opts.forEach(op=>{const f=korOf(op);if(f)S.learned[f.k]=1})}AUDIO.se(res?'chest':'no');t=0};
+  const isNew=!S.learned[w.k]&&!o.practice;
+  const pick=j=>{if(res!==null)return;i=j;res=opts[j]===w.m;if(!o.practice){const s=S.stats[w.k]||(S.stats[w.k]={ok:0,ng:0}),b0=statBox(s);S.learned[w.k]=1;if(res){s.ok++;s.box=Math.min(4,b0+1)}else{s.ng++;s.box=0}s.last=Date.now();streakTouch();opts.forEach(op=>{const f=korOf(op);if(f)S.learned[f.k]=1})}AUDIO.se(res?'chest':'no');autoSpeak(w.k);t=0};
   push({a:'n',draw(){const G=geo(),W2=bw(G),cx=G.px+G.pw/2;
       g.fillStyle='rgba(0,0,0,.32)';g.fillRect(0,0,LW,LH);g.globalAlpha=.96;win(G.px,G.py,G.pw,PH);g.globalAlpha=1;
       const hs=res===null?'この かんこくごの いみは？':'（'+w.r+'）';g.font='13px '+FONT;const hw=g.measureText(hs).width+26;
       g.fillStyle='rgba(159,176,255,.16)';rrect(cx-hw/2,G.py+14,hw,22,11);g.fill();txt(hs,cx-hw/2+13,G.py+18,'#9fb0ff',13);
+      if(isNew){rrect(G.px+14,G.py+14,38,20,10);g.fillStyle='#f2c94c';g.fill();txt('NEW',G.px+21,G.py+17,'#3a2a00',13)}
+      if(canSpeak())drawSpeaker(G.px+G.pw-30,G.py+25);
       midT(w.k,cx,G.py+46,'#fff',52,G.pw-40);
       if(res!==null)midT(res?'せいかい！':'ざんねん…',cx,G.py+108,res?'#7ee07e':'#ff8a8a',20,G.pw-40);
       opts.forEach((op,j)=>{const[x,y]=cell(j),sel=j===i&&res===null,ok=res!==null&&op===w.m,ng=res!==null&&j===i&&op!==w.m;
@@ -31,9 +56,9 @@ function quiz(w,cb,o={}){
       if(res!==null&&o.practice)txt('タップで つぎへ',G.px+G.pw-104,G.py+18,'#9ac',11)},
     update(dt){if(res!==null){t+=dt;if(!o.practice&&t>1.3)this.done()}},
     done(){if(this._d)return;this._d=1;pop();cb(res)},
-    key(k){if(res!==null){if(k==='a'&&t>.3)this.done();return}
+    key(k){if(k==='b'){speakKo(w.k);return}if(res!==null){if(k==='a'&&t>.3)this.done();return}
       if(k==='left'&&i%2)i--;else if(k==='right'&&i%2===0)i++;else if(k==='up'&&i>1)i-=2;else if(k==='down'&&i<2)i+=2;else if(k==='a')pick(i)},
-    tap(lx,ly){if(res!==null){if(t>.3)this.done();return}const G=geo(),W2=bw(G);for(let j=0;j<4;j++){const[x,y]=cell(j);if(lx>=x-4&&lx<=x+W2+4&&ly>=y-4&&ly<=y+BH+4){if(i===j)pick(j);else i=j;return}}}})}
+    tap(lx,ly){{const G0=geo();if(canSpeak()&&Math.hypot(lx-(G0.px+G0.pw-30),ly-(G0.py+25))<=20){speakKo(w.k);return}}if(res!==null){if(t>.3)this.done();return}const G=geo(),W2=bw(G);for(let j=0;j<4;j++){const[x,y]=cell(j);if(lx>=x-4&&lx<=x+W2+4&&ly>=y-4&&ly<=y+BH+4){if(i===j)pick(j);else i=j;return}}}})}
 // teaching: villagers pass on one word of the hero's theme
 const SPOTS=[[0,1,2,3,4,5,6,9,10,11,12,13,14,15,16,7,8],[0,1,2,3,4,5,6,7,8,9,10,13,14,15,16,17,18],[0,1,2,3,4,5,6,7,8,9,10,13,14,15,16,17,18]];
 function teachPage(n){if(n.w===undefined)return null;const p=pool(),ti=townIdx(S.map),vi=ti<0?0:ti,pm=S.perm&&S.perm[vi],ix=SPOTS[vi].indexOf(n.w);if(ix<0)return null;const q=pm&&pm[ix]!==undefined?pm[ix]:ix;
@@ -74,13 +99,42 @@ function guardCheck(vi){vi=vi||0;const st=STG[vi],H=S.hero;
   if(vi===0&&tutorialOn()&&!S.flags.tutDone){tutorialTest();return}
   if(vi===0&&S.flags.tutL!==undefined){if(known.length<=S.flags.tutL){say(['門番「ふん、まだ だれにも あたらしく\nはなしを きいていないようだな。','むらの ひとたちに はなしかけて\nことばを おぼえてから こい！」'],null);return}delete S.flags.tutL}
   runTest(lo,lo+50,st.intro,['門番「'+st.pass.replace(/^門番「/,'')],null,()=>{S.flags[st.f]=1;try{quietSave()}catch(e){}},null)}
-function bookScene(){let top=0;const all=pool(),per=7;
+function bookScene(){let top=0;const all=pool(),per=7,max=Math.max(0,all.length-per);
+  const barBtn=(x,y,up)=>{rrect(x,y,28,26,7);g.fillStyle='rgba(255,255,255,.08)';g.fill();g.lineWidth=1.5;g.strokeStyle='rgba(120,140,220,.6)';g.stroke();g.fillStyle='#cfd8ff';g.beginPath();if(up){g.moveTo(x+14,y+8);g.lineTo(x+21,y+18);g.lineTo(x+7,y+18)}else{g.moveTo(x+14,y+18);g.lineTo(x+21,y+8);g.lineTo(x+7,y+8)}g.closePath();g.fill()};
   push({a:'t',draw(){win(16,16,480,420);const known=all.filter(w=>S.learned[w.k]).length;txt('たんごちょう　'+VOC[HEROES[S.hero.cls||0].id].theme+'　'+known+' / '+all.length,34,28,'#f2c94c',18);
-      all.slice(top,top+per).forEach((w,j)=>{const y=70+j*46,k=S.learned[w.k];const s=S.stats[w.k]||{ok:0,ng:0};
+      g.fillStyle='rgba(255,255,255,.1)';rrect(34,54,444,7,3.5);g.fill();if(known){g.fillStyle='#f2c94c';rrect(34,54,Math.max(7,444*known/all.length),7,3.5);g.fill()}
+      barBtn(412,22,true);barBtn(446,22,false);
+      all.slice(top,top+per).forEach((w,j)=>{const y=74+j*44,k=S.learned[w.k];const s=S.stats[w.k]||{ok:0,ng:0};
+        if(j)g.fillStyle='rgba(255,255,255,.07)',g.fillRect(34,y-6,444,1);
         txt(k?w.k:'？？？',34,y,k?'#fff':'#667',22);txt(k?w.r:'',200,y+4,'#9fb0ff',14);txt(k?w.m:'',320,y+2,'#7ee07e',18);if(k)txt('○'+s.ok+' ×'+s.ng,420,y+4,'#aab',12)});
-      txt('↑↓ スクロール　B もどる',34,408,'#aab',13)},
-    key(k){if(k==='down'&&top+per<all.length)top++;else if(k==='up'&&top>0)top--;else if(k==='right')top=Math.min(all.length-per,top+per);else if(k==='left')top=Math.max(0,top-per);else if(k==='b'||k==='a'){AUDIO.se('ok');pop()}},tap(lx,ly){if(ly>380)this.key('b');else if(ly>220)this.key('down');else this.key('up')}})}
-
+      const st=streakInfo();txt(canSpeak()?'ことばを タップで はつおん':'↑↓ スクロール',34,408,'#aab',13);txt('れんぞく '+st.n+'にち',360,408,st.n?'#ffb347':'#667',14)},
+    key(k){if(k==='down'&&top<max)top++;else if(k==='up'&&top>0)top--;else if(k==='right')top=Math.min(max,top+per);else if(k==='left')top=Math.max(0,top-per);else if(k==='b'||k==='a'){AUDIO.se('ok');pop()}},
+    tap(lx,ly){if(ly>=396){this.key('b');return}
+      if(ly>=20&&ly<=50&&lx>=406){this.key(lx<440?'up':'down');return}
+      const j=Math.floor((ly-68)/44);if(lx>=34&&lx<=478&&j>=0&&j<per&&top+j<all.length){const w=all[top+j];if(S.learned[w.k]){AUDIO.se('ok');speakKo(w.k)}}}})}
+// summary shown after a battle in which some words were missed
+function reviewCard(words,cb){const seen={},ws=words.filter(w=>!seen[w.k]&&(seen[w.k]=1)).slice(0,4),h=116+ws.length*58,y0=Math.round((448-h)/2);
+  const close=()=>{AUDIO.se('ok');pop();cb&&cb()};
+  push({a:'c',rv:1,draw(){g.fillStyle='rgba(0,0,0,.4)';g.fillRect(-1300,-1300,3200,3200);win(26,y0,460,h);txt('まちがえた ことば',46,y0+16,'#f2c94c',18);
+      ws.forEach((w,j)=>{const y=y0+52+j*58;if(j){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(46,y-6,420,1)}
+        const sz=((x,m,z)=>{g.font=z+'px '+FONT;while(z>12&&g.measureText(x).width>m)z--;return z})(w.k,170,28);txt(w.k,46,y,'#fff',sz);txt(w.r,46,y+32,'#9fb0ff',14);
+        const ms=((x,m,z)=>{g.font=z+'px '+FONT;while(z>11&&g.measureText(x).width>m)z--;return z})(w.m,190,19);g.font=ms+'px '+FONT;txt(w.m,396-g.measureText(w.m).width,y+8,'#7ee07e',ms);
+        if(canSpeak())drawSpeaker(446,y+16,13)});
+      rrect(186,y0+h-48,140,34,10);g.fillStyle='rgba(242,201,76,.16)';g.fill();g.lineWidth=2;g.strokeStyle='#f2c94c';g.stroke();txt('とじる',256-27,y0+h-40,'#fff',17)},
+    key(k){if(k==='a'||k==='b')close()},
+    tap(lx,ly){if(canSpeak()&&lx>=426&&lx<=466){const j=Math.floor((ly-(y0+52-6))/58);if(j>=0&&j<ws.length&&ly<y0+52+ws.length*58){speakKo(ws[j].k);return}}
+      if(ly>=y0+h-56&&lx>=170&&lx<=342)close()}})}
+// learning record: per-theme progress, streak, accuracy
+function recordScene(){const rows=HEROES.map(H=>{const ws=VOC[H.id].w.map(wobj);return{job:H.job,n:ws.filter(w=>S.learned[w.k]).length,t:ws.length}});
+  const tot=rows.reduce((a,r)=>a+r.t,0),kn=rows.reduce((a,r)=>a+r.n,0),st=streakInfo();let ok=0,ng=0;Object.values(S.stats||{}).forEach(x=>{ok+=x.ok||0;ng+=x.ng||0});const acc=ok+ng?Math.round(100*ok/(ok+ng)):null;
+  const bar=(x,y,w,h,f,col)=>{g.fillStyle='rgba(255,255,255,.1)';rrect(x,y,w,h,h/2);g.fill();if(f>0){g.fillStyle=col;rrect(x,y,Math.max(h,w*f),h,h/2);g.fill()}};
+  const col=f=>f>=1?'#f2c94c':f>.6?'#7ee07e':f>.25?'#6aa8ff':'#7a86c8';
+  push({a:'c',tap(){this.key('b')},draw(){win(16,14,480,420);txt('がくしゅうの きろく',34,26,'#f2c94c',18);
+      txt('れんぞく '+st.n+'にち',34,56,st.n?'#ffb347':'#99a',16);txt('さいこう '+st.best+'にち',152,58,'#aab',13);txt('きょう '+st.today+'もん',250,58,'#9fd8ff',14);txt(acc===null?'せいかい --':'せいかい '+acc+'%',356,58,'#aab',13);
+      txt('おぼえた ことば　'+kn+' / '+tot,34,90,'#fff',16);bar(34,114,444,10,tot?kn/tot:0,col(tot?kn/tot:0));
+      rows.forEach((r,j)=>{const y=142+j*30,f=r.t?r.n/r.t:0;g.font='14px '+FONT;let z=14;while(z>10&&g.measureText(r.job).width>112){z--;g.font=z+'px '+FONT}txt(r.job,34,y,'#cfd8ff',z);bar(156,y+4,236,9,f,col(f));txt(r.n+' / '+r.t,404,y,'#aab',13)});
+      txt('B もどる',34,410,'#aab',13)},
+    key(k){if(k==='a'||k==='b'){AUDIO.se('ok');pop()}}})}
 function hangulScene(){let mode=0,pg=0;
   const P=[['子音',[['ㄱ','カ行 k/g'],['ㄴ','ナ行 n'],['ㄷ','タ行 t/d'],['ㄹ','ラ行 r/l'],['ㅁ','マ行 m'],['ㅂ','パ行 p/b'],['ㅅ','サ行 s'],['ㅇ','むおん／ん'],['ㅈ','チャ行 j'],['ㅊ','チャ(げき)'],['ㅋ','カ(げき)'],['ㅌ','タ(げき)'],['ㅍ','パ(げき)'],['ㅎ','ハ行 h']]],
   ['母音',[['ㅏ','ア'],['ㅑ','ヤ'],['ㅓ','オ（くちひろく）'],['ㅕ','ヨ（くちひろく）'],['ㅗ','オ'],['ㅛ','ヨ'],['ㅜ','ウ'],['ㅠ','ユ'],['ㅡ','ウ（くちよこ）'],['ㅣ','イ']]],
@@ -210,7 +264,7 @@ function practice(hi,list){const H=HEROES[hi],P=VOC[H.id].w.map(wobj);
   const L=()=>{const m=16,W=LW,Hh=LH;if(isLand()){const hy=12,hh=58,cy=hy+hh+10,bh=48,by=Hh-12-bh,qh=by-10-cy,qw=Math.min(W*.4,400),gap=10,ah=(qh-3*gap)/4,ax=m+qw+14;return{m,W,Hh,hy,hh,cy,qh,qw,ch:cy,ah,bh,by,ax,aw:W-m-ax,ay:j=>cy+j*(ah+gap),land:true}}const hy=Hh*.05,hh=Math.max(64,Hh*.07),cy=hy+hh+Hh*.02,qh=Hh*.28,ch=cy+qh+Hh*.028,ah=Hh*.08,gap=Hh*.012,bh=Math.max(48,Hh*.06),by=Hh-Hh*.06-bh;
     return{m,W,Hh,hy,hh,cy,qh,ch,ah,bh,by,ax:m,aw:W-2*m,ay:j=>ch+j*(ah+gap),qw:W-2*m,land:false}};
   const back=()=>{PRACTICING=false;pop()};
-  const answer=j=>{if(phase!=='q')return;sel=j;const w=q.w;const good=q.opts[j]===w.m;phase='a';qa=performance.now();tot++;AUDIO.se(good?'chest':'no');if(good)ok++;else if(!wrong.find(x=>x.k===w.k))wrong.push(w);
+  const answer=j=>{if(phase!=='q')return;sel=j;const w=q.w;const good=q.opts[j]===w.m;phase='a';qa=performance.now();tot++;AUDIO.se(good?'chest':'no');streakTouch();autoSpeak(w.k);if(good)ok++;else if(!wrong.find(x=>x.k===w.k))wrong.push(w);
     if(tot%10===0){toast=tot+'問目！';tt=1.8}};
   const nextQ=()=>{phase='q';mk()};
   const wrongList=()=>{let top=0;const per=Math.max(3,Math.floor((LH-150)/62));push({a:'n',draw(){g.fillStyle='#0b0e3a';g.fillRect(0,0,LW,LH);
@@ -240,7 +294,7 @@ function practice(hi,list){const H=HEROES[hi],P=VOC[H.id].w.map(wobj);
       if(k==='up')cur=(cur+3)%4;else if(k==='down')cur=(cur+1)%4;else if(k==='a')answer(cur)},
     tap(lx,ly){const l=L();
       if(ly>=l.by-4){if(lx>LW-l.m-214){AUDIO.se('ok');wrongList();return}if(lx<l.m+154){back();return}}
-      if(performance.now()-qt<450)return;if(phase==='a'){if(performance.now()-qa>400)nextQ();return}
+      if(phase==='q'&&canSpeak()&&lx>=l.m&&lx<=l.m+l.qw&&ly>=l.cy&&ly<=l.cy+l.qh){speakKo(q.w.k);return}if(performance.now()-qt<450)return;if(phase==='a'){if(performance.now()-qa>400)nextQ();return}
       for(let j=0;j<4;j++){const y=l.ay(j);if(ly>=y&&ly<=y+l.ah&&lx>=l.ax&&lx<=l.ax+l.aw){cur=j;answer(j);return}}}})}
 function practiceMenu(){push({a:'c',draw(){g.fillStyle='#0b0e3a';g.fillRect(-1300,-1300,3200,3200)},key(){},tap(){}});
   choose(HEROES.map(h=>'　'+h.job+'　'+THEME_K(h.id)),c=>{pop();if(c>=0)practice(c)},{x:20,y:30,w:472,cancel:true,a:'c'})}
