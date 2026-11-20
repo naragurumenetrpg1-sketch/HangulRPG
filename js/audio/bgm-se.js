@@ -1,5 +1,5 @@
 // ===== 7. audio + loop =====
-const AUDIO=(()=>{let ctx=null,master=null,timer=null,cur=null,step=0,on=true;
+const AUDIO=(()=>{let ctx=null,master=null,timer=null,cur=null,step=0,on=true,vol=.7;
   const mf=n=>440*Math.pow(2,(n-69)/12);
   const SONGS={
    town:{bpm:132,lead:[72,76,79,76,74,77,81,77,72,76,79,84,83,79,76,0],bass:[48,0,55,0,53,0,57,0,48,0,55,0,55,0,52,0]},
@@ -14,7 +14,7 @@ const AUDIO=(()=>{let ctx=null,master=null,timer=null,cur=null,step=0,on=true;
     const s=ctx.createBufferSource(),gn=ctx.createGain();s.buffer=b;gn.gain.value=v;s.connect(gn);gn.connect(master);s.start(ctx.currentTime+t0)}
   function tick(){const s=SONGS[cur];if(!s)return;const L=s.lead[step%16],B=s.bass[step%16],d=60/s.bpm/2;
     if(L)tone(mf(L),d*.9,'square',.035);if(B)tone(mf(B),d*1.6,'triangle',.08);step++}
-  return{init(){if(ctx)return;try{ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=.7;master.connect(ctx.destination);if(cur)this.play(cur)}catch(e){}},
+  return{setVol(v){vol=v;if(master)master.gain.value=v},init(){if(ctx)return;try{ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=vol;master.connect(ctx.destination);if(cur)this.play(cur)}catch(e){}},
    play(n){cur=n;step=0;clearInterval(timer);if(n&&SONGS[n]&&ctx)timer=setInterval(tick,60/SONGS[n].bpm/2*1000)},
    se(n){const f={ok:()=>tone(880,.08,'square',.05),talk:()=>tone(660,.05,'square',.03),no:()=>tone(140,.2,'sawtooth',.06),
      hit:()=>{noise(.12,.12);tone(160,.1,'square',.06,0,60)},fire:()=>{noise(.35,.1);tone(300,.35,'sawtooth',.05,0,900)},
