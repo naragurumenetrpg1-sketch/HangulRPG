@@ -18,7 +18,7 @@ function shopMenu(){const H=S.hero;
   const goods=[['herb','やくそう',8],['ether','せいすい',20],['w1','どうのつるぎ',60],['w2','てつのつるぎ',180],['a1','かわのよろい',50],['a2','くさりかたびら',160]];
   let i=0,msg='なにを おもとめですか？';
   const own=k=>k[0]==='w'?H.wpn>=+k[1]:k[0]==='a'?H.arm>=+k[1]:false;
-  push({a:'c',tap(lx,ly){if(lx<60||lx>452||ly<40||ly>370){this.key('b');return}const j=Math.floor((ly-90)/34);if(j>=0&&j<goods.length){if(j===i)this.key('a');else i=j}},draw(){win(60,40,392,330);txt('どうぐや',80,54,'#f2c94c');txt('所持金 '+H.gold+'G',330,54);
+  push({full:1,a:'c',tap(lx,ly){if(lx<60||lx>452||ly<40||ly>370){this.key('b');return}const j=Math.floor((ly-90)/34);if(j>=0&&j<goods.length){if(j===i)this.key('a');else i=j}},draw(){win(60,40,392,330);txt('どうぐや',80,54,'#f2c94c');txt('所持金 '+H.gold+'G',330,54);
       goods.forEach((it,j)=>{const o=own(it[0]);txt((j===i?'▶':'  ')+it[1],80,96+j*34,o?'#888':'#fff');
         txt(o?'そうび ずみ':it[2]+'G',330,96+j*34,o?'#888':'#fff')});
       lines(msg,80,310,24,'#cde')},
@@ -30,13 +30,16 @@ function shopMenu(){const H=S.hero;
       if(it[0]==='herb'||it[0]==='ether'){S.items[it[0]]++;msg=it[1]+'を かいました！'}
       else if(it[0][0]==='w'){H.wpn=+it[0][1];msg=it[1]+'を そうびした！ こうげき +'+WPN[H.wpn][1]}
       else{H.arm=+it[0][1];msg=it[1]+'を そうびした！ しゅび +'+ARM[H.arm][1]}}}})}
+// leave the game and go back to the title (home) screen. The game is saved first, so "続きから" picks up where you stopped.
+function backToTitle(){say(['タイトルに もどりますか？\n（ここまでの きろくは じどうで セーブされます）'],()=>choose(['はい','いいえ'],c=>{
+  if(c!==0)return;try{quietSave()}catch(e){}
+  S.scenes.length=1;S.started=false;S.mv=null;S.path=null;title();home()}))}
 function openMenu(){if(S.mv)return;AUDIO.se('ok');
-  const it=['つよさ','どうぐ','じゅもん','たんごちょう','きろく','セーブ'];if(canSpeak())it.push('はつおん '+(voiceOn()?'ON':'OFF'));
-  choose(it,i=>{
-    if(i===0)status();else if(i===1)useItem();else if(i===2)fieldSpell();else if(i===3)bookScene();else if(i===4)recordScene();else if(i===5)save();
-    else if(i===6){setVoice(!voiceOn());if(voiceOn())speakKo('안녕하세요');openMenu()}},{x:16,y:16,w:190})}
+  const acts=[['つよさ',status],['どうぐ',useItem],['じゅもん',fieldSpell],['たんごちょう',bookScene],['きろく',recordScene],['セーブ',save],['タイトルへ',backToTitle]];
+  if(canSpeak())acts.push(['はつおん '+(voiceOn()?'ON':'OFF'),()=>{setVoice(!voiceOn());if(voiceOn())speakKo('안녕하세요');openMenu()}]);
+  choose(acts.map(x=>x[0]),i=>{if(i>=0)acts[i][1]()},{x:16,y:16,w:190})}
 function status(){const H=S.hero;
-  push({a:'t',tap(){this.key('b')},draw(){win(150,16,346,300);txt(H.name+' '+HEROES[H.cls||0].job+' Lv'+H.lv,170,30,'#f2c94c');
+  push({full:1,a:'t',tap(){this.key('b')},draw(){win(150,16,346,300);txt(H.name+' '+HEROES[H.cls||0].job+' Lv'+H.lv,170,30,'#f2c94c');
     lines(`HP  ${H.hp} / ${H.mhp}\nMP  ${H.mp} / ${H.mmp}\nこうげき ${ATK()}\nしゅび   ${DEF()}\nけいけんち ${H.exp}\nつぎのLvまで ${need(H.lv)-H.exp}\nぶき ${WPN[H.wpn][0]}\nぼうぐ ${ARM[H.arm][0]}\n${H.gold} G`,170,62,27)},
    key(k){if(k==='a'||k==='b'){AUDIO.se('ok');pop()}}})}
 function useItem(){const o=[];if(S.items.herb)o.push(['herb','やくそう x'+S.items.herb]);if(S.items.ether)o.push(['ether','せいすい x'+S.items.ether]);
