@@ -14,7 +14,7 @@ button:active{background:var(--line)}button:focus-visible{outline:2px solid var(
 #cross .ring{position:absolute;inset:26px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
 #knob{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:var(--line);border:3px solid #cfd8ff;box-sizing:border-box;transition:transform .08s}
 #cross.act #knob{background:var(--accent);border-color:#fff}
-#hg{top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));width:40px;height:40px;font-size:20px;border-radius:8px}
+#hg{top:max(10px,env(safe-area-inset-top,0px));right:calc(max(10px,env(safe-area-inset-right,0px)) + 96px);width:40px;height:40px;font-size:20px;border-radius:8px}
 #bk{top:max(10px,env(safe-area-inset-top,0px));right:calc(max(10px,env(safe-area-inset-right,0px)) + 48px);width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mp{top:max(10px,env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 
