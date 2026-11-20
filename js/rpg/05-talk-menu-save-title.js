@@ -35,12 +35,11 @@ function backToTitle(){say(['タイトルに もどりますか？\n（ここま
   if(c!==0)return;try{quietSave()}catch(e){}
   S.scenes.length=1;S.started=false;S.mv=null;S.path=null;title();home()}))}
 function openMenu(){if(S.mv)return;AUDIO.se('ok');
-  const acts=[['つよさ',status],['どうぐ',useItem],['じゅもん',fieldSpell],['たんごちょう',bookScene],['きろく',recordScene],['セーブ',save],['タイトルへ',backToTitle]];
-  if(canSpeak())acts.push(['はつおん '+(voiceOn()?'ON':'OFF'),()=>{setVoice(!voiceOn());if(voiceOn())speakKo('안녕하세요');openMenu()}]);
+  const acts=[['つよさ',status],['どうぐ',useItem],['じゅもん',fieldSpell],['たんごちょう',bookScene],['きろく',recordScene],['セーブ',save],['せってい',settingsScene],['タイトルへ',backToTitle]];
   choose(acts.map(x=>x[0]),i=>{if(i>=0)acts[i][1]()},{x:16,y:16,w:190})}
 function status(){const H=S.hero;
   push({full:1,a:'t',tap(){this.key('b')},draw(){win(150,16,346,300);txt(H.name+' '+HEROES[H.cls||0].job+' Lv'+H.lv,170,30,'#f2c94c');
-    lines(`HP  ${H.hp} / ${H.mhp}\nMP  ${H.mp} / ${H.mmp}\nこうげき ${ATK()}\nしゅび   ${DEF()}\nけいけんち ${H.exp}\nつぎのLvまで ${need(H.lv)-H.exp}\nぶき ${WPN[H.wpn][0]}\nぼうぐ ${ARM[H.arm][0]}\n${H.gold} G`,170,62,27)},
+    lines(`${CFG.easy?'':'HP  '+H.hp+' / '+H.mhp+'\n'}MP  ${H.mp} / ${H.mmp}\nこうげき ${ATK()}\nしゅび   ${DEF()}\nけいけんち ${H.exp}\nつぎのLvまで ${need(H.lv)-H.exp}\nぶき ${WPN[H.wpn][0]}\nぼうぐ ${ARM[H.arm][0]}\n${H.gold} G`,170,62,27)},
    key(k){if(k==='a'||k==='b'){AUDIO.se('ok');pop()}}})}
 function useItem(){const o=[];if(S.items.herb)o.push(['herb','やくそう x'+S.items.herb]);if(S.items.ether)o.push(['ether','せいすい x'+S.items.ether]);
   if(!o.length){say('どうぐを もっていない。');return}
@@ -63,8 +62,8 @@ function title(){let t=0,i=0;const opts=(hasSave()?['最初から','続きから
     update(dt){t+=dt},
     key(k){if(k==='b'){AUDIO.se('ok');home();return}if(k==='up'||k==='down')i=(i+1)%opts.length;else if(k==='a'){AUDIO.se('ok');
       if(i===opts.length-1){home();return}
-      if(i===1&&loadSave()){pop();AUDIO.play(M().bgm)}
-      else{pop();AUDIO.play('town');say(['たびの なかまを えらぼう！\nなかまごとに おぼえる ことばの テーマが ちがうぞ。'],()=>pickHero(ci=>pickComps(ci,cs=>{newRun(ci,true,cs);say(['ある ひ、ルミナむらの たからである ひかりの石が\nまおうガルムに うばわれた…','ゆうしゃ ユウは ちょうろうに よばれている。\nまずは むらの ちょうろうの いえを たずねよう。','【そうさ】\nスワイプで いどう／タップで そこへ いどう\nAボタン けってい・しらべる\nBボタン メニュー　(キーボードも つかえます)'])})))}}}};
+      if(i===1&&loadSave()){pop();AUDIO.play(M().bgm);if(!guideSeen())setTimeout(()=>{if(S.started&&S.scenes.length===1)guideScene()},400)}
+      else{pop();AUDIO.play('town');say(['たびの なかまを えらぼう！\nなかまごとに おぼえる ことばの テーマが ちがうぞ。'],()=>pickHero(ci=>pickComps(ci,cs=>{newRun(ci,true,cs);say(['ある ひ、ルミナむらの たからである ひかりの石が\nまおうガルムに うばわれた…','ゆうしゃ ユウは ちょうろうに よばれている。\nまずは むらの ちょうろうの いえを たずねよう。'],()=>{if(!guideSeen())guideScene()})})))}}}};
   push(sc)}
 
 const heroLabel=i=>{const H=HEROES[i];if(i>=4&&!metaUnlocked())return '？？？　（クリアで かいほう）';return (metaGet().cleared[i]?'★':'　')+H.job+'　'+VOC[H.id].theme};

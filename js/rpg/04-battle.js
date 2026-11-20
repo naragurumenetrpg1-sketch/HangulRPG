@@ -24,8 +24,8 @@ function startBattle(id,opt={}){
       {const bw=200,bx=cx-bw/2,by=ey+34;g.font='18px '+FONT;const nw=g.measureText(e.n).width;txt(e.n,cx-nw/2,ey+8,'#fff',18);
         g.fillStyle='#000';g.fillRect(bx-2,by-2,bw+4,14);g.fillStyle='#401010';g.fillRect(bx,by,bw,10);g.fillStyle=e.hp/e.mhp>.5?'#4ec24e':e.hp/e.mhp>.25?'#e0c040':'#e04040';g.fillRect(bx,by,Math.round(bw*Math.max(0,e.hp)/e.mhp),10)}
       // hero status (top-left) and log (top-right)
-      win(10,10,150,100);txt(H.name+' Lv'+H.lv,22,20);txt('HP '+String(H.hp).padStart(3,' '),22,50);txt('MP '+String(H.mp).padStart(3,' '),22,78);
-      {const land=isLand(),lw=land?Math.min(440,LW*.5):Math.min(LW-20,460),lx=land?Math.max(10+INSET_L,cx-lw/2):cx-lw/2,LHt=106,ly=Math.min(ey+54,LH-LHt-2);win(lx,ly,lw,LHt);wrapLines(B.log.slice(-3).join('\n'),lw-28,16).slice(-4).forEach((l,j)=>txt(l,lx+14,ly+10+j*23,'#fff',16))}
+      if(CFG.easy){win(10,10,150,72);txt(H.name+' Lv'+H.lv,22,20);txt('MP '+String(H.mp).padStart(3,' '),22,50)}else{win(10,10,150,100);txt(H.name+' Lv'+H.lv,22,20);txt('HP '+String(H.hp).padStart(3,' '),22,50);txt('MP '+String(H.mp).padStart(3,' '),22,78)}
+      {const land=isLand(),lw=land?Math.min(440,LW*.5):Math.min(LW-20,460),lx=land?Math.max(10+INSET_L,cx-lw/2):cx-lw/2,LHt=106,ly=Math.min(ey+54,LH-LHt-2);win(lx,ly,lw,LHt);{const fs=[14,16,19][CFG.fsize==null?1:CFG.fsize];wrapLines(B.log.slice(-3).join('\n'),lw-28,fs).slice(-4).forEach((l,j)=>txt(l,lx+14,ly+10+j*(fs+7),'#fff',fs))}}
       g.restore()},
     update(dt){T0+=dt;shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt*2);eFlash=Math.max(0,eFlash-dt*3.5);lunge=Math.max(0,lunge-dt*3.2);sshake=Math.max(0,sshake-dt);if(e.hp<=0)eHit=Math.max(0,eHit-dt*1.5);
     fx.forEach(f=>f.t+=dt);fx=fx.filter(f=>f.t<f.dur);pts.forEach(p=>{p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=260*dt});pts=pts.filter(p=>p.t<p.life);fl.forEach(f=>f.t+=dt*1.1);fl=fl.filter(f=>f.t<f.life)}};
@@ -41,7 +41,7 @@ function startBattle(id,opt={}){
     if(e.boss&&turn%3===0){d=Math.ceil(H.mhp/e.hits);msg(e.n+'は ほのおを はいた！');AUDIO.se('fire')}
     else if(e.spell&&Math.random()<.3){d=Math.ceil(H.mhp/e.hits);msg(e.n+'は やみのたまを はなった！');AUDIO.se('fire')}
     else{d=Math.ceil(H.mhp/e.hits);msg(e.n+'の こうげき！');AUDIO.se('hit')}
-    if(d>0){H.hp=Math.max(0,H.hp-d);flash=.5;lunge=1;sshake=.3;floatTxt('-'+d,85,86,'#ff6b6b',34);burst(60,60,14,['#ff6b6b','#ffd0d0'],110,.5);msg(H.name+'は '+d+'の ダメージを うけた！')}
+    if(CFG.easy){lunge=1;msg('でも ユウは だいじょうぶ！ もういちど！')}else if(d>0){H.hp=Math.max(0,H.hp-d);flash=.5;lunge=1;sshake=.3;floatTxt('-'+d,85,86,'#ff6b6b',34);burst(60,60,14,['#ff6b6b','#ffd0d0'],110,.5);msg(H.name+'は '+d+'の ダメージを うけた！')}
     if(H.hp<=0)wait(900,lose);else wait(750);
   }
   function playerDmg(base,spread){return Math.max(1,Math.round(base+(Math.random()*spread*2-spread)))}

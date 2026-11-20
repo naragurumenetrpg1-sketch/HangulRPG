@@ -3,7 +3,7 @@ let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(landOK()!==landMode)resize();
   const top=S.scenes[S.scenes.length-1];if(top&&top.update)top.update(dt);
   g.imageSmoothingEnabled=false;S.scenes.forEach(s=>{const o=boxOff(s.a||'c');g.save();g.translate(o[0],o[1]);s.draw&&s.draw();g.restore()});requestAnimationFrame(frame)}
-function boot(){title();home();requestAnimationFrame(frame)}
+function boot(){applyVol();title();home();requestAnimationFrame(frame)}
 (document.fonts&&document.fonts.load?Promise.race([Promise.all([document.fonts.load('16px DotGothic16','あ'),document.fonts.load('500 16px "Noto Sans KR"','한국어')]),new Promise(r=>setTimeout(r,1500))]):Promise.resolve()).then(boot,boot);
 
 // ===== 9. touch: swipe to move, tap to walk =====

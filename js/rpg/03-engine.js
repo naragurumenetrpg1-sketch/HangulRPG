@@ -79,14 +79,13 @@ function lines(s,x,y,lh=22,col){s.split('\n').forEach((l,i)=>txt(l,x,y+i*lh,col)
 const push=s=>S.scenes.push(s), pop=()=>S.scenes.pop();
 // message window with typewriter; pages = array of strings; cb after
 function say(pages,cb,who){if(typeof pages==='string')pages=[pages];pages=pages.flatMap(p=>String(p).split('\f'));let pi=0,ci=0,t=0,lp=-1,lay=null;
-  const SZ=[[18,28,4],[16,24,5],[14,21,6]]; // font, line height, max lines: shrink only if a page still doesn't fit
   const sc={draw(){win(16,292,480,144);const p=pages[pi];
-      if(lp!==pi){lp=pi;lay=null;for(const z of SZ){const r=wrapR(p,444,z[0]);if(r.length<=z[2]){lay={z,r};break}}if(!lay)lay={z:SZ[2],r:wrapR(p,444,SZ[2][0])}}
+      if(lp!==pi){lp=pi;lay=null;for(let fz=FSIZES[CFG.fsize==null?1:CFG.fsize];fz>=12;fz--){const lh=fz+9,r=wrapR(p,444,fz);if(r.length<=Math.floor(130/lh)||fz===12){lay={z:[fz,lh],r};break}}}
       lay.r.forEach(([a,b],j)=>{if(ci>a)txt(p.slice(a,Math.min(b,ci)).replace(/[ 　]+$/,''),34,306+j*lay.z[1],'#fff',lay.z[0])});
       if(who){g.font='15px '+FONT;const tw=g.measureText(who).width+28;g.save();g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=8;rrect(28,273,tw,28,8);g.fillStyle='#0f1a36';g.fill();g.restore();
         g.lineWidth=2;g.strokeStyle='#d9b24a';rrect(28,273,tw,28,8);g.stroke();txt(who,42,279,'#f2c94c',15)}
       if(ci>=p.length){const by=Math.sin(t*6)*2;g.fillStyle='#f2c94c';g.beginPath();g.moveTo(466,413+by);g.lineTo(480,413+by);g.lineTo(473,422+by);g.closePath();g.fill()}},
-    update(dt){t+=dt;sc._c=(sc._c||0)+dt*45;ci=Math.floor(Math.min(pages[pi].length,sc._c))},
+    update(dt){t+=dt;sc._c=(sc._c||0)+dt*(SPEEDS[CFG.speed==null?1:CFG.speed]||45);ci=Math.floor(Math.min(pages[pi].length,sc._c))},
     key(k){if(k!=='a'&&k!=='b')return;const p=pages[pi];if(ci<p.length){ci=p.length;sc._c=p.length;return}
       AUDIO.se('ok');if(pi<pages.length-1){pi++;ci=0;sc._c=0}else{pop();cb&&cb()}},a:'b'};push(sc);AUDIO.se('talk')}
 const sayAs=say;
@@ -111,18 +110,18 @@ function decoKey(ch,x,y){const h=((x*73856093)^(y*19349663))>>>0,f=S.map==='fiel
 let _sh=false;               // true only while a town is being drawn
 const TOWN_VIGNETTE=true;
 // building: a soft parallelogram thrown to the right along the ground (pre-rendered once per image) + contact shade at the wall's foot
-function bldShadow(im){if(im._bs)return im._bs;const w=im.naturalWidth/2*.92,h=im.naturalHeight/2,d=15,dx=Math.round(h*.75),dy=Math.round(h*.1),pad=9,ox=pad+8,oy=pad+d,k=2;
+function bldShadow(im){if(im._bs)return im._bs;const w=im.naturalWidth,h=im.naturalHeight,d=22,dx=Math.round(h*.42),dy=Math.round(h*.07),pad=10,ox=pad+10,oy=pad+d,k=2;
   const cv=document.createElement('canvas');cv.width=(ox+dx+pad)*k;cv.height=(oy+dy+pad)*k;const q=cv.getContext('2d');q.scale(k,k);try{q.filter='blur(5px)'}catch(e){}
-  q.fillStyle='#0b1230';q.beginPath();q.moveTo(ox-8,oy-d);q.lineTo(ox+dx,oy-d+dy);q.lineTo(ox+dx,oy+dy);q.lineTo(ox-8,oy);q.closePath();q.fill();return im._bs={c:cv,ox,oy,w}}
-function drawBldShadow(im,bx,by,a){if(!im||!im.naturalWidth)return;const s=bldShadow(im);g.save();g.globalAlpha=a;g.drawImage(s.c,bx+s.w/2-s.ox,by-s.oy,s.c.width/2,s.c.height/2);
-  const gr=g.createLinearGradient(0,by-1,0,by+5);gr.addColorStop(0,'rgba(8,14,36,.32)');gr.addColorStop(1,'rgba(8,14,36,0)');g.globalAlpha=1;g.fillStyle=gr;g.fillRect(bx-s.w/2,by-1,s.w,6);g.restore()}
+  q.fillStyle='#0b1230';q.beginPath();q.moveTo(ox-10,oy-d);q.lineTo(ox+dx,oy-d+dy);q.lineTo(ox+dx,oy+dy);q.lineTo(ox-10,oy);q.closePath();q.fill();return im._bs={c:cv,ox,oy,w,k}}
+function drawBldShadow(im,bx,by,a,len){if(!im||!im.naturalWidth)return;const s=bldShadow(im);g.save();g.globalAlpha=a;g.translate(bx+s.w/2-4,by);g.scale(len||1,1);g.drawImage(s.c,-s.ox,-s.oy,s.c.width/s.k,s.c.height/s.k);g.restore();
+  g.save();const gr=g.createLinearGradient(0,by-1,0,by+6);gr.addColorStop(0,'rgba(8,14,36,'+Math.min(.5,a*.7)+')');gr.addColorStop(1,'rgba(8,14,36,0)');g.fillStyle=gr;g.fillRect(bx-s.w/2,by-1,s.w,7);g.restore()}
 function treeShadow(im,bx,by,a){if(!im||!im.naturalWidth)return;const w=im.naturalWidth/2,r=w*.42;g.save();g.translate(bx+w*.14,by-1);g.scale(1,.3);const gr=g.createRadialGradient(0,0,0,0,0,r);
   gr.addColorStop(0,'rgba(8,14,36,'+a+')');gr.addColorStop(.7,'rgba(8,14,36,'+a*.55+')');gr.addColorStop(1,'rgba(8,14,36,0)');g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,7);g.fill();g.restore()}
 function cshadow(cx,by){if(!_sh)return;g.save();g.translate(cx+1.5,by);g.scale(1,.38);const gr=g.createRadialGradient(0,0,0,0,0,9);gr.addColorStop(0,'rgba(8,14,36,.55)');gr.addColorStop(.6,'rgba(8,14,36,.3)');gr.addColorStop(1,'rgba(8,14,36,0)');
   g.fillStyle=gr;g.beginPath();g.arc(0,0,9,0,7);g.fill();g.restore()}
-function vignette(){if(!TOWN_VIGNETTE)return;g.save();g.translate(LW/2,LH/2);g.scale(LW,LH);const gr=g.createRadialGradient(0,0,.3,0,0,.74);gr.addColorStop(0,'rgba(6,8,28,0)');gr.addColorStop(1,'rgba(6,8,28,.5)');g.fillStyle=gr;g.fillRect(-.5,-.5,1,1);g.restore()}
+function vignette(v){if(!TOWN_VIGNETTE)return;g.save();g.translate(LW/2,LH/2);g.scale(LW,LH);const gr=g.createRadialGradient(0,0,.3,0,0,.74);gr.addColorStop(0,'rgba(6,8,28,0)');gr.addColorStop(1,'rgba(6,8,28,'+(v||.5)+')');g.fillStyle=gr;g.fillRect(-.5,-.5,1,1);g.restore()}
 function drawWorld(){
-  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),TOWN=S.map.startsWith('village');_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
+  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),TOWN=S.map.startsWith('village')&&CFG.fx!==false,TD=TOWN?todOf():null,TT=performance.now()/1000;_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
   let px=S.x,py=S.y;if(S.mv){px+=(S.mv.tx-S.x)*S.mv.t;py+=(S.mv.ty-S.y)*S.mv.t}
   let cx=px+.5-VW/2,cy=py+.5-VH/2;
   S.cam=[Math.round(cx*TS),Math.round(cy*TS)];g.save();g.scale(WS,WS);g.translate(-S.cam[0],-S.cam[1]);
@@ -136,7 +135,7 @@ function drawWorld(){
   if(S.map==='field'||S.map.startsWith('village')){const ax0=Math.floor(cx),ax1=Math.ceil(cx+VW)+1,ay0=Math.floor(cy),ay1=Math.ceil(cy+VH)+1;
     for(let y=ay0;y<ay1;y++)for(let x=ax0;x<ax1;x++){if(x>=0&&y>=0&&x<m.w&&y<m.h)continue;g.drawImage(TILES['.'],x*TS,y*TS);
       const h=(((x*73856093)^(y*19349663))>>>0)%11;if(h<4){const k=decoKey('T',x,y);deco.push({y:y+.9,f:()=>spr(k,x,y)})}else if(h===4){const k=['bush1','bush2','tuft1','tuft2'][(x+y+99)&3];deco.push({y:y+.5,f:()=>spr(k,x,y)})}}}
-  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const ch=tileAt(S.map,x,y);g.drawImage((ch==='^'&&S.map==='field')?TILES['.']:(TILES[ch]||TILES['.']),x*TS,y*TS);
+  for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const ch=tileAt(S.map,x,y);g.drawImage((ch==='^'&&S.map==='field')?TILES['.']:((TOWN&&ch==='S')?cobble(x,y):(TILES[ch]||TILES['.'])),x*TS,y*TS);
     if(S.map==='cave1'||S.map==='cave2'){const h=((x*73856093)^(y*19349663))>>>0;
       if(ch==='c'&&h%9===0)deco.push({y:y+.2,f:()=>spr(['pebb','tuft','pudd','mush','fung','flora','glowc'][h%7],x,y)});
       else if(ch==='W'&&h%6===0){const up=tileAt(S.map,x,y-1)==='W',k=(up?['stag','stac','crys','deadb','glowc','fung']:['stag','stac','glowc','fung'])[h%(up?6:4)];deco.push({y:y+.9,f:()=>spr(k,x,y)})}
@@ -144,8 +143,8 @@ function drawWorld(){
     if(ch==='^'&&S.map==='field'&&((x<16?x%2===0:x%2===1))&&y%2===1){const k=(y===1&&(x%4===0||x%4===1))||((x*5+y*3)%7===0)?'mt4':'mt1';deco.push({y:y+.5,f:()=>spr(k,x,y)})}
     if(ch==='T'||ch==='Z'){const k=decoKey(ch,x,y);deco.push({y:y+.9,f:()=>spr(k,x,y),sh:[k,x,y]})}
     else if(ch==='F')spr(['o_pink','o_purple','fl_w','fl_m','fl_b'][((x*7+y*3)*5>>2)%5],x,y);else if(DK[ch])spr(DK[ch],x,y,(ch==='X'||((ch==='O'||ch==='K')&&S.map.startsWith('village')&&!S.seen[S.map+x+','+y])||((ch==='V'||ch==='H')&&WARPS[S.map+':'+x+','+y]))?'#fff':null)}
-  if(TOWN){(BLD[S.map]||[]).forEach(b=>drawBldShadow(IMGS['b_'+b.k],b.x*TS+8,(b.y+1)*TS,.52));
-    deco.forEach(d=>{if(d.sh)treeShadow(IMGS[d.sh[0]],d.sh[1]*TS+8,(d.sh[2]+1)*TS,.42)})}
+  if(TOWN){(BLD[S.map]||[]).forEach(b=>drawBldShadow(IMGS['b_'+b.k],b.x*TS+8,(b.y+1)*TS,TD.shA,TD.shLen));
+    deco.forEach(d=>{if(d.sh)treeShadow(IMGS[d.sh[0]],d.sh[1]*TS+8,(d.sh[2]+1)*TS,TD.shA*.8)});townGround(x0,x1,y0,y1,TD,TT)}
   const ents=(BLD[S.map]||[]).map(b=>{const im=IMGS['b_'+b.k];return{y:b.y-.5,f:()=>{if(im.complete&&im.naturalWidth)g.drawImage(im,b.x*TS+8-im.naturalWidth/2,(b.y+1)*TS-im.naturalHeight)}}}).concat(deco).concat((NPCS[S.map]||[]).filter(n=>!n.gone).map(n=>({y:n.y,f:()=>{cshadow(n.x*TS+8,(n.y+1)*TS-2);if(n.h){const ha=IMGS['hero_'+n.h];if(ha&&ha.naturalWidth){outl(ha,0,0,52,44,n.x*TS+8-13,(n.y+1)*TS-23,26,22,ncol(n));return}}const im=n.i&&IMGS[n.i];if(im&&im.naturalWidth){const w=im.naturalWidth/2,h=im.naturalHeight/2;outl(im,0,0,im.naturalWidth,im.naturalHeight,n.x*TS+8-w/2,(n.y+1)*TS-1-h,w,h,ncol(n))}else drawChar(g,n.x*TS,n.y*TS-2,SPR[n.s]||SPR.vill,0,0)}})));
   ents.push({y:py,f:()=>drawHero(px,py)});
   (S.comps||[]).forEach((c,k)=>{const tr=S.trail||[],a=tr[k]||tr[tr.length-1]||{x:S.x,y:S.y},b=k===0?{x:S.x,y:S.y}:(tr[k-1]||a),t=S.mv?Math.min(1,S.mv.t):0,fx=a.x+(b.x-a.x)*t,fy=a.y+(b.y-a.y)*t,ddx=b.x-a.x,ddy=b.y-a.y,dd=ddy>0?0:ddy<0?1:ddx<0?2:ddx>0?3:(a.d!==undefined?a.d:S.dir);ents.push({y:fy-.01*(k+1),f:()=>drawHeroCls(c,fx,fy,dd,!!S.mv&&(ddx||ddy))})});
@@ -155,7 +154,8 @@ function drawWorld(){
      if(ch==='D'||(WARPS[S.map+':'+x+','+y]&&ch!=='.'&&ch!=='_'&&!'VH<>'.includes(ch)))box(x,y,'#fff')}
    for(const k in WARPS){if(k.indexOf(S.map+':')===0){const[x,y]=k.split(':')[1].split(',').map(Number);if(x>=x0&&x<x1&&y>=y0&&y<y1&&!'VH<>'.includes(tileAt(S.map,x,y)))box(x,y,'#fff')}}
   }
-  g.restore();_sh=false;if(TOWN)vignette();
+  if(TOWN){townTint(TD);townLights(TD,TT)}
+  g.restore();_sh=false;if(TOWN)vignette(TD.vig);
   if(m.name){/* location tag */}
 }
 function drawHero(px,py){drawHeroCls(S.hero.cls||0,px,py,S.dir,!!S.mv)}
