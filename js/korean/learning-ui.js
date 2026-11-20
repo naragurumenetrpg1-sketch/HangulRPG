@@ -246,10 +246,10 @@ function menuGeom(n){const h=Math.max(44,LH*.062),gap=Math.max(10,LH*.012),w=Mat
 function menuHit(lx,ly,n){const m=menuGeom(n);for(let j=0;j<n;j++){const y=m.y0+j*(m.h+m.gap);if(ly>=y&&ly<=y+m.h&&lx>=m.x&&lx<=m.x+m.w)return j}return -1}
 function menuDraw(opts,i){const m=menuGeom(opts.length);opts.forEach((s,j)=>{const y=m.y0+j*(m.h+m.gap),on=j===i;g.save();if(on){g.shadowColor='#f2c94c';g.shadowBlur=14}g.beginPath();g.moveTo(m.x+14,y);g.arcTo(m.x+m.w,y,m.x+m.w,y+m.h,14);g.arcTo(m.x+m.w,y+m.h,m.x,y+m.h,14);g.arcTo(m.x,y+m.h,m.x,y,14);g.arcTo(m.x,y,m.x+m.w,y,14);g.closePath();g.fillStyle=on?'rgba(28,48,38,.97)':'rgba(6,16,14,.94)';g.fill();g.restore();g.lineWidth=2;g.strokeStyle=on?'#f2c94c':'#6fbf93';g.stroke();
     g.font='26px '+FONT;const tw=g.measureText(s).width;g.save();g.textBaseline='middle';const cy=y+m.h/2+1;g.fillStyle='#000';g.fillText(s,m.x+(m.w-tw)/2+1,cy+1);g.fillStyle=on?'#fff2b0':'#e8fff0';g.fillText(s,m.x+(m.w-tw)/2,cy);if(on){g.fillStyle='#f2c94c';g.fillText('▶',m.x+16,cy)}g.restore()})}
-function home(){let i=0;const opts=['RPGで遊ぶ','韓国語一覧','韓国語一問一答'];
+function home(){let i=0;const opts=['RPGで遊ぶ','韓国語一覧','韓国語一問一答','せってい'];
   push({a:'n',nopad:true,noland:true,draw(){drawTitleBG();menuDraw(opts,i)},
-    tap(lx,ly){const j=menuHit(lx,ly,3);if(j>=0){i=j;this.key('a')}},
-    key(k){if(k==='up')i=(i+2)%3;else if(k==='down')i=(i+1)%3;else if(k==='a'){AUDIO.se('ok');if(i===0)pop();else if(i===1)vocabList();else practiceMenu()}}})}
+    tap(lx,ly){const j=menuHit(lx,ly,4);if(j>=0){i=j;this.key('a')}},
+    key(k){if(k==='up')i=(i+3)%4;else if(k==='down')i=(i+1)%4;else if(k==='a'){AUDIO.se('ok');if(i===0)pop();else if(i===1)vocabList();else if(i===2)practiceMenu();else settingsScene()}}})}
 
 let PRACTICING=false;
 function practice(hi,list){const H=HEROES[hi],P=VOC[H.id].w.map(wobj);
