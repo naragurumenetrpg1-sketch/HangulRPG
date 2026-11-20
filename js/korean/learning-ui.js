@@ -101,7 +101,7 @@ function guardCheck(vi){vi=vi||0;const st=STG[vi],H=S.hero;
   runTest(lo,lo+50,st.intro,['門番「'+st.pass.replace(/^門番「/,'')],null,()=>{S.flags[st.f]=1;try{quietSave()}catch(e){}},null)}
 function bookScene(){let top=0;const all=pool(),per=7,max=Math.max(0,all.length-per);
   const barBtn=(x,y,up)=>{rrect(x,y,28,26,7);g.fillStyle='rgba(255,255,255,.08)';g.fill();g.lineWidth=1.5;g.strokeStyle='rgba(120,140,220,.6)';g.stroke();g.fillStyle='#cfd8ff';g.beginPath();if(up){g.moveTo(x+14,y+8);g.lineTo(x+21,y+18);g.lineTo(x+7,y+18)}else{g.moveTo(x+14,y+18);g.lineTo(x+21,y+8);g.lineTo(x+7,y+8)}g.closePath();g.fill()};
-  push({a:'t',draw(){win(16,16,480,420);const known=all.filter(w=>S.learned[w.k]).length;txt('たんごちょう　'+VOC[HEROES[S.hero.cls||0].id].theme+'　'+known+' / '+all.length,34,28,'#f2c94c',18);
+  push({a:'c',ref:'bk',draw(){win(16,16,480,420);const known=all.filter(w=>S.learned[w.k]).length;txt('たんごちょう　'+VOC[HEROES[S.hero.cls||0].id].theme+'　'+known+' / '+all.length,34,28,'#f2c94c',18);
       g.fillStyle='rgba(255,255,255,.1)';rrect(34,54,444,7,3.5);g.fill();if(known){g.fillStyle='#f2c94c';rrect(34,54,Math.max(7,444*known/all.length),7,3.5);g.fill()}
       barBtn(412,22,true);barBtn(446,22,false);
       all.slice(top,top+per).forEach((w,j)=>{const y=74+j*44,k=S.learned[w.k];const s=S.stats[w.k]||{ok:0,ng:0};
@@ -147,7 +147,7 @@ function hangulScene(){let mode=0,pg=0;
   const TABS=['あいうえお表','ハングル表','もじ一覧'];
   AUDIO.se('ok');
   const BH=()=>mode===1?Math.max(420,Math.min(LH-24,Math.round(LH*.67))):420;
-  push({a:'t',draw(){win(16,16,480,BH());
+  push({a:'c',ref:'hg',draw(){win(16,16,480,BH());
       TABS.forEach((t,i)=>{const x=30+i*152;g.fillStyle=i===mode?'#3a4bd0':'rgba(255,255,255,.1)';g.fillRect(x,26,146,28);txt(t,x+8,31,i===mode?'#fff':'#9fb0ff',16)});
       if(mode===0){
         KV.forEach((v,j)=>txt(v,100+j*76,59,'#f2c94c',16));
@@ -172,9 +172,12 @@ function hangulScene(){let mode=0,pg=0;
       else if(mode===2&&k==='down'&&pg<P.length-1){pg++;AUDIO.se('ok')}else if(mode===2&&k==='up'&&pg>0){pg--;AUDIO.se('ok')}
       else if(k==='b'||k==='a'){AUDIO.se('ok');pop()}},
     tap(lx,ly){if(ly>BH()-15)this.key('b');else if(ly<60){const i=Math.max(0,Math.min(2,Math.floor((lx-30)/152)));if(i!==mode){mode=i;AUDIO.se('ok')}}else if(mode===2){this.key(ly<240?'up':'down')}}})}
-document.getElementById('hg').addEventListener('click',()=>{if(S.scenes.length===1&&!S.mv)hangulScene()});
-setInterval(()=>{for(const id of['hg','bk','mp']){const h=document.getElementById(id);if(h)h.style.display=(S.scenes.length>1||S.mv)?'none':''}for(const id of['cross','bB']){const h=document.getElementById(id);if(h)h.style.visibility=(S.started&&!PRACTICING&&!(S.scenes[S.scenes.length-1]||{}).nopad)?'visible':'hidden'}},150);
-window.home=home;document.getElementById('bk').addEventListener('click',()=>{if(S.scenes.length===1&&!S.mv){AUDIO.se('ok');bookScene()}});
+// reference buttons work in every RPG scene (walking, dialogue, battle...). Tapping the one that is open closes it; tapping another switches.
+function openRef(id,fn){if(!S.started||PRACTICING||S.scenes.some(s=>s.noland))return;const top=S.scenes[S.scenes.length-1]||{};
+  if(top.ref===id){AUDIO.se('ok');pop();return}if(top.ref)pop();AUDIO.se('ok');fn()}
+document.getElementById('hg').addEventListener('click',()=>openRef('hg',hangulScene));
+setInterval(()=>{{const top=S.scenes[S.scenes.length-1]||{},on=S.started&&!PRACTICING&&!S.scenes.some(s=>s.noland)&&!top.full;for(const id of['hg','bk','mp']){const h=document.getElementById(id);if(h)h.style.display=on?'':'none'}}for(const id of['cross','bB']){const h=document.getElementById(id);if(h)h.style.visibility=(S.started&&!PRACTICING&&!(S.scenes[S.scenes.length-1]||{}).nopad)?'visible':'hidden'}},150);
+window.home=home;document.getElementById('bk').addEventListener('click',()=>openRef('bk',bookScene));
 
 function mapScene(){
   const ti=townIdx(S.map),grp=ti>=0?'town':S.map,m=M(),all0=pool();let t=0;
@@ -183,7 +186,7 @@ function mapScene(){
   const PH=Math.min(LH-32,600),s=Math.min(448/m.w,(PH-150)/m.h),ox=16+(480-m.w*s)/2,oy=62,f=s/TS;
   const DK={K:'o_crate',O:'o_barrel',X:'o_chest',x:'o_chesto',V:'i_town',H:'i_cave',h:'o_fh',v:'o_fv',p:'o_fp'};
   const sp=(k,tx,ty)=>{const im=IMGS[k];if(!im||!im.naturalWidth)return;const w=im.naturalWidth/2*f,h=im.naturalHeight/2*f;g.drawImage(im,ox+(tx*TS+8)*f-w/2,oy+(ty+1)*TS*f-h,w,h)};
-  push({a:'t',update(dt){t+=dt},draw(){win(16,16,480,PH);txt(m.name+'　のマップ',34,26,'#f2c94c',18);
+  push({a:'c',ref:'mp',update(dt){t+=dt},draw(){win(16,16,480,PH);txt(m.name+'　のマップ',34,26,'#f2c94c',18);
       g.imageSmoothingEnabled=false;g.save();g.beginPath();g.rect(ox,oy,m.w*s,m.h*s);g.clip();
       for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){let ch=tileAt(S.map,x,y);if(ch==='^'&&S.map==='field')ch='.';g.drawImage(TILES[ch]||TILES['.'],ox+x*s,oy+y*s,s+.6,s+.6)}
       for(const b of (BLD[S.map]||[])){const im=IMGS['b_'+b.k];if(im&&im.naturalWidth)g.drawImage(im,ox+(b.x*TS+8-im.naturalWidth/2)*f,oy+((b.y+1)*TS-im.naturalHeight)*f,im.naturalWidth*f,im.naturalHeight*f)}
@@ -202,7 +205,7 @@ function mapScene(){
         txt('ぜんたいの かいしゅう　'+knownAll+' / '+all0.length,34,y0+48,'#9fb0ff',15)}
       txt('● あなた　● ひと　● もんばん　B もどる',34,PH-12,'#aab',12)},
     key(k){if(k==='b'||k==='a'){AUDIO.se('ok');pop()}},tap(){AUDIO.se('ok');pop()}})}
-document.getElementById('mp').addEventListener('click',()=>{if(S.scenes.length===1&&!S.mv){AUDIO.se('ok');mapScene()}});
+document.getElementById('mp').addEventListener('click',()=>openRef('mp',mapScene));
 
 const THEME_K=id=>({sword:'食堂',mage:'自然',priest:'家族・挨拶',monk:'体・動き',apriest:'道案内・方角'})[id]||VOC[id].theme;
 const ROM={I:['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'],V:['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'],
@@ -317,7 +320,8 @@ function objective(){const F=S.flags||{},p=pool(),ti=townIdx(S.map),cnt=vi=>p.sl
       if(ti===0)return 'ことばを あつめ もんばんの テストへ ('+cnt(0)+'/50)';return 'むらへ もどって もんばんの テストを うけよう'}
     if(vi>=0&&ti===vi)return msg.replace('ことばを あつめ','ことばを あつめ')+' ('+cnt(vi)+'/50)';return msg}}
   return 'まおうガルムの どうくつへ！（みなみの おく）'}
-function drawObjective(){if(S.scenes.length>1)return;const s='もくてき：'+objective();g.save();g.font='15px '+FONT;let sz=15;const max=LW-200;while(sz>11&&g.measureText(s).width>max){sz--;g.font=sz+'px '+FONT}const w=g.measureText(s).width,x=(LW-w)/2,y=14;
+function drawObjective(){if(S.scenes.length>1)return;const s='もくてき：'+objective();g.save();g.font='15px '+FONT;let sz=15;let rEnd=LW-10;{const hb=document.getElementById('hg'),cr=cv.getBoundingClientRect();if(hb&&hb.style.display!=='none'&&cr.width){const l=(hb.getBoundingClientRect().left-cr.left)/cr.width*LW;if(l>0&&l<LW)rEnd=Math.min(rEnd,Math.round(l)-8)}}
+  const max=Math.min(LW-200,rEnd-10-34);while(sz>11&&g.measureText(s).width>max){sz--;g.font=sz+'px '+FONT}const w=g.measureText(s).width,x=Math.max(22,Math.min((LW-w)/2,rEnd-12-w)),y=14;
   g.globalAlpha=.88;g.fillStyle='rgba(8,14,40,.78)';g.beginPath();const rx=x-12,ry=y-4,rw=w+24,rh=sz+14,r=12;g.moveTo(rx+r,ry);g.arcTo(rx+rw,ry,rx+rw,ry+rh,r);g.arcTo(rx+rw,ry+rh,rx,ry+rh,r);g.arcTo(rx,ry+rh,rx,ry,r);g.arcTo(rx,ry,rx+rw,ry,r);g.closePath();g.fill();g.globalAlpha=1;g.lineWidth=1.5;g.strokeStyle='rgba(242,201,76,.7)';g.stroke();
   g.textBaseline='middle';g.fillStyle='#f2c94c';g.fillText('◆',rx+8,ry+rh/2+1);g.fillStyle='#fff';g.fillText(s,x+8,ry+rh/2+1);g.restore()}
 
