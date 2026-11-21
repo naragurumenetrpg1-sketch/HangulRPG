@@ -121,7 +121,7 @@ function cshadow(cx,by){if(!_sh)return;g.save();g.translate(cx+1.5,by);g.scale(1
   g.fillStyle=gr;g.beginPath();g.arc(0,0,9,0,7);g.fill();g.restore()}
 function vignette(v){if(!TOWN_VIGNETTE)return;g.save();g.translate(LW/2,LH/2);g.scale(LW,LH);const gr=g.createRadialGradient(0,0,.3,0,0,.74);gr.addColorStop(0,'rgba(6,8,28,0)');gr.addColorStop(1,'rgba(6,8,28,'+(v||.5)+')');g.fillStyle=gr;g.fillRect(-.5,-.5,1,1);g.restore()}
 function drawWorld(){
-  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),OUT=CFG.fx!==false&&outdoor(S.map),TOWN=OUT&&S.map!=='field',TD=OUT?todNow():null,TT=performance.now()/1000;_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
+  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),OUT=CFG.fx!==false&&outdoor(S.map),TOWN=OUT&&S.map!=='field',TD=OUT?todNow():null,CAVE=CFG.fx!==false&&S.map.startsWith('cave'),TT=performance.now()/1000;_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
   let px=S.x,py=S.y;if(S.mv){px+=(S.mv.tx-S.x)*S.mv.t;py+=(S.mv.ty-S.y)*S.mv.t}
   let cx=px+.5-VW/2,cy=py+.5-VH/2;
   S.cam=[Math.round(cx*TS),Math.round(cy*TS)];g.save();g.scale(WS,WS);g.translate(-S.cam[0],-S.cam[1]);
@@ -154,7 +154,7 @@ function drawWorld(){
      if(ch==='D'||(WARPS[S.map+':'+x+','+y]&&ch!=='.'&&ch!=='_'&&!'VH<>'.includes(ch)))box(x,y,'#fff')}
    for(const k in WARPS){if(k.indexOf(S.map+':')===0){const[x,y]=k.split(':')[1].split(',').map(Number);if(x>=x0&&x<x1&&y>=y0&&y<y1&&!'VH<>'.includes(tileAt(S.map,x,y)))box(x,y,'#fff')}}
   }
-  if(OUT)townTint(TD);if(TOWN)townLights(TD,TT)
+  if(OUT)townTint(TD,TT,px*TS+8,py*TS+4);if(CAVE)caveTorch(TT,px*TS+8,py*TS+4);if(TOWN)townLights(TD,TT)
   g.restore();_sh=false;if(OUT)vignette(TOWN?TD.vig:TD.vig*.7);drawTodToast();
   if(m.name){/* location tag */}
 }
