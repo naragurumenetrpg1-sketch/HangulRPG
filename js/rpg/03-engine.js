@@ -98,7 +98,7 @@ function choose(opts,cb,o={}){let i=0;const ba=S.scenes[S.scenes.length-1].a,an=
 // fade transition
 function fadeTo(mid,done){let t=0,did=false;push({draw(){const a=t<.3?t/.3:Math.max(0,1-(t-.3)/.3);g.fillStyle=`rgba(0,0,0,${a})`;g.fillRect(0,0,LW,LH)},
   update(dt){t+=dt;if(t>=.3&&!did){did=true;mid()}if(t>=.6){pop();done&&done()}},key(){},a:'n'})}
-function warpTo(w){fadeTo(()=>{S.map=w[0];S.x=w[1];S.y=w[2];S.dir=w[3];S.mv=null;S.trail=[];AUDIO.play(M().bgm)},()=>{const vi={village2:1,village3:2}[w[0]];if(vi&&!S.flags['in'+vi]&&typeof entryTest==='function')entryTest(vi)})}
+function warpTo(w){fadeTo(()=>{if(S.map!==w[0])S.trans=(S.trans||0)+1;S.map=w[0];S.x=w[1];S.y=w[2];S.dir=w[3];S.mv=null;S.trail=[];AUDIO.play(M().bgm)},()=>{todArrived();const vi={village2:1,village3:2}[w[0]];if(vi&&!S.flags['in'+vi]&&typeof entryTest==='function')entryTest(vi)})}
 // ---- world ----
 function decoKey(ch,x,y){const h=((x*73856093)^(y*19349663))>>>0,f=S.map==='field';
   if(ch==='T'&&S.map==='village3'){const r=h%10;return r<6?'fir'+(1+h%4):r<9?'tr'+(1+h%5):'dead'+(1+h%4)}
@@ -121,7 +121,7 @@ function cshadow(cx,by){if(!_sh)return;g.save();g.translate(cx+1.5,by);g.scale(1
   g.fillStyle=gr;g.beginPath();g.arc(0,0,9,0,7);g.fill();g.restore()}
 function vignette(v){if(!TOWN_VIGNETTE)return;g.save();g.translate(LW/2,LH/2);g.scale(LW,LH);const gr=g.createRadialGradient(0,0,.3,0,0,.74);gr.addColorStop(0,'rgba(6,8,28,0)');gr.addColorStop(1,'rgba(6,8,28,'+(v||.5)+')');g.fillStyle=gr;g.fillRect(-.5,-.5,1,1);g.restore()}
 function drawWorld(){
-  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),TOWN=S.map.startsWith('village')&&CFG.fx!==false,TD=TOWN?todOf():null,TT=performance.now()/1000;_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
+  g.fillStyle='#000';g.fillRect(0,0,LW,LH);const m=M(),OUT=CFG.fx!==false&&outdoor(S.map),TOWN=OUT&&S.map!=='field',TD=OUT?todNow():null,TT=performance.now()/1000;_sh=TOWN;const VW=LW/(TS*WS),VH=LH/(TS*WS);
   let px=S.x,py=S.y;if(S.mv){px+=(S.mv.tx-S.x)*S.mv.t;py+=(S.mv.ty-S.y)*S.mv.t}
   let cx=px+.5-VW/2,cy=py+.5-VH/2;
   S.cam=[Math.round(cx*TS),Math.round(cy*TS)];g.save();g.scale(WS,WS);g.translate(-S.cam[0],-S.cam[1]);
@@ -154,8 +154,8 @@ function drawWorld(){
      if(ch==='D'||(WARPS[S.map+':'+x+','+y]&&ch!=='.'&&ch!=='_'&&!'VH<>'.includes(ch)))box(x,y,'#fff')}
    for(const k in WARPS){if(k.indexOf(S.map+':')===0){const[x,y]=k.split(':')[1].split(',').map(Number);if(x>=x0&&x<x1&&y>=y0&&y<y1&&!'VH<>'.includes(tileAt(S.map,x,y)))box(x,y,'#fff')}}
   }
-  if(TOWN){townTint(TD);townLights(TD,TT)}
-  g.restore();_sh=false;if(TOWN)vignette(TD.vig);
+  if(OUT)townTint(TD);if(TOWN)townLights(TD,TT)
+  g.restore();_sh=false;if(OUT)vignette(TOWN?TD.vig:TD.vig*.7);drawTodToast();
   if(m.name){/* location tag */}
 }
 function drawHero(px,py){drawHeroCls(S.hero.cls||0,px,py,S.dir,!!S.mv)}
