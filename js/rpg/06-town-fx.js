@@ -1,17 +1,24 @@
 // ===== 6b. town atmosphere (HD-2D style): time of day, window/forge lights, dappled light, floor texture =====
 // Only used inside towns (maps called "village*") and only when settings > まちの えんしゅつ is ON.
 const TOD={
-  day:{tint:[255,247,231],glow:.16,dap:1,dapC:'255,244,200',shA:.5,shLen:1,vig:.48},
+  day:{tint:[255,249,238],glow:.16,dap:1,dapC:'255,244,200',shA:.5,shLen:1,vig:.48},
   evening:{tint:[255,188,132],glow:.62,dap:.5,dapC:'255,200,140',shA:.56,shLen:1.7,vig:.54},
   night:{tint:[108,128,208],glow:1,dap:.45,dapC:'170,190,255',shA:.3,shLen:.9,vig:.62}};
-const TOD_MAP={village:'day',village2:'evening',village3:'night'};
-const todOf=()=>TOD[TOD_MAP[S.map]||'day'];
+// Time passes with every screen change (town / cave / field / house...). One full day = 16 changes.
+const TOD_SEQ=['day','day','day','day','day',['day','evening',.5],'evening','evening','evening',['evening','night',.5],'night','night','night','night',['night','day',.5],'day'];
+const TOD_MSG={5:'ひが かたむいてきた…',9:'よるに なった…',14:'そらが しらんできた…'};
+const outdoor=m=>m==='field'||m.startsWith('village');
+function mixTod(a,b,w){const L=(x,y)=>x+(y-x)*w;return{tint:a.tint.map((v,i)=>Math.round(L(v,b.tint[i]))),glow:L(a.glow,b.glow),dap:L(a.dap,b.dap),shA:L(a.shA,b.shA),shLen:L(a.shLen,b.shLen),vig:L(a.vig,b.vig),dapC:w<.5?a.dapC:b.dapC}}
+function todNow(){const k=TOD_SEQ[((S.trans||0)%TOD_SEQ.length+TOD_SEQ.length)%TOD_SEQ.length];return typeof k==='string'?TOD[k]:mixTod(TOD[k[0]],TOD[k[1]],k[2])}
+// called after a screen change has finished
+function todArrived(){const n=(S.trans||0)%TOD_SEQ.length,msg=TOD_MSG[n];if(msg&&CFG.fx!==false&&outdoor(S.map))S.todToast={t0:performance.now(),msg}}
+function drawTodToast(){const o=S.todToast;if(!o)return;const e=performance.now()-o.t0,D=3400;if(e>D){S.todToast=null;return}
+  const a=Math.min(1,e/350,(D-e)/700);g.save();g.globalAlpha=a;g.font='16px '+FONT;const w=g.measureText(o.msg).width+44,x=(LW-w)/2,y=54;win(x,y,w,32);txt(o.msg,x+22,y+8,'#f2c94c',16);g.restore()}
 // light anchors inside each building image (image pixels, origin top-left)
 const LIGHTS={
   inn:{win:[[40,49],[20,86],[60,86]],door:[40,97]},
   shop:{win:[[40,38],[17,63],[58,63]],door:[38,80]},
-  elder:{win:[[40,42],[20,88],[60,88]],door:[40,100]},
-  smith:{forge:[[27,53,1],[60,63,.8]]}};
+  elder:{win:[[40,42],[20,88],[60,88]],door:[40,100]}};   // the smithy has no lights
 
 const _gl={};
 function glowSpr(r,rgb){const k=r+'|'+rgb;if(_gl[k])return _gl[k];const s=r*2,c=document.createElement('canvas');c.width=c.height=s;const q=c.getContext('2d'),gr=q.createRadialGradient(r,r,0,r,r,r);
@@ -48,7 +55,22 @@ function townGround(x0,x1,y0,y1,TD,t){
   g.restore()}
 
 // tint (multiply) then lights (additive) - both in world space, after everything is drawn
-function townTint(TD){g.save();g.globalCompositeOperation='multiply';g.fillStyle='rgb('+TD.tint.join(',')+')';g.fillRect(S.cam[0]-2,S.cam[1]-2,LW/WS+4,LH/WS+4);g.restore()}
+function townTint(TD,t,hx,hy){
+  const c=TD.tint,avg=(c[0]+c[1]+c[2])/3,L=Math.max(0,Math.min(1,(235-avg)/85)); // 0 by day ... 1 at night: how much the hero's lantern shows
+  g.save();g.globalCompositeOperation='multiply';
+  if(L>.02&&hx!=null){ // lantern: the night tint is (almost) cancelled around the hero and fades back out with distance
+    const R=(72+40*L)*(1+.025*Math.sin(t*7.3)+.015*Math.sin(t*13.1)),gr=g.createRadialGradient(hx,hy,R*.18,hx,hy,R*1.6),warm=[255,Math.round(235-20*L),Math.round(205-35*L)];
+    const mixc=w=>'rgb('+[0,1,2].map(i=>Math.round(c[i]+(warm[i]-c[i])*w)).join(',')+')';
+    gr.addColorStop(0,mixc(L));gr.addColorStop(.5,mixc(L*.5));gr.addColorStop(1,mixc(0));g.fillStyle=gr}
+  else g.fillStyle='rgb('+c.join(',')+')';
+  g.fillRect(S.cam[0]-2,S.cam[1]-2,LW/WS+4,LH/WS+4);g.restore();
+  if(L>.02&&hx!=null){g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.22*L*(1+.05*Math.sin(t*9));g.drawImage(glowSpr(48,'255,190,110'),hx-48,hy-48,96,96);g.restore()}}
+// caves: dark, lit only by the hero's torch
+function caveTorch(t,hx,hy){
+  const R=96*(1+.03*Math.sin(t*6.7)+.02*Math.sin(t*11.3));g.save();g.globalCompositeOperation='multiply';
+  const gr=g.createRadialGradient(hx,hy,R*.15,hx,hy,R*1.7);gr.addColorStop(0,'rgb(255,248,232)');gr.addColorStop(.38,'rgb(178,172,188)');gr.addColorStop(1,'rgb(30,34,76)');
+  g.fillStyle=gr;g.fillRect(S.cam[0]-2,S.cam[1]-2,LW/WS+4,LH/WS+4);g.restore();
+  g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.42*(1+.05*Math.sin(t*8.1));g.drawImage(glowSpr(64,'255,170,90'),hx-64,hy-64,128,128);g.globalAlpha=.16;g.drawImage(glowSpr(64,'255,220,160'),hx-30,hy-30,60,60);g.restore()}
 function townLights(TD,t){
   g.save();g.globalCompositeOperation='lighter';
   (BLD[S.map]||[]).forEach(b=>{const im=IMGS['b_'+b.k],L=LIGHTS[b.k];if(!im||!im.naturalWidth||!L)return;
