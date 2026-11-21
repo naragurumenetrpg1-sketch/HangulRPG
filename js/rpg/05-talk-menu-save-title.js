@@ -50,12 +50,12 @@ function fieldSpell(){const H=S.hero;if(!S.flags.heal){say('まだ つかえる 
   choose(['ホイミ 3'],i=>{if(i<0)return;if(H.mp<3){say('MPが たりない！');return}if(H.hp>=H.mhp){say('HPは まんたんだ。');return}
     H.mp-=3;H.hp=Math.min(H.mhp,H.hp+25);AUDIO.se('heal');say('ホイミを となえた！\nHPが かいふくした！')},{x:150,y:16,w:150})}
 const SAVEKEY='lumina-hero-save-v1';
-function quietSave(){metaMerge();localStorage.setItem(SAVEKEY,JSON.stringify({comps:S.comps||[],map:S.map,x:S.x,y:S.y,dir:S.dir,hero:S.hero,items:S.items,flags:S.flags,chests:S.chests,learned:S.learned,stats:S.stats,seen:S.seen,cleared:S.cleared,seed:S.seed}))}
+function quietSave(){metaMerge();localStorage.setItem(SAVEKEY,JSON.stringify({comps:S.comps||[],map:S.map,x:S.x,y:S.y,dir:S.dir,hero:S.hero,items:S.items,flags:S.flags,chests:S.chests,learned:S.learned,stats:S.stats,seen:S.seen,cleared:S.cleared,seed:S.seed,trans:S.trans||0}))}
 function saveInfo(d){try{d=d||JSON.parse(localStorage.getItem(SAVEKEY));return HEROES[d.hero.cls].job+' Lv'+d.hero.lv}catch(e){return ''}}
 function save(){try{quietSave();const nm=(M()&&M().name)||'';say(['セーブしました！','（'+saveInfo({hero:S.hero})+(nm?'　'+nm:'')+'）\nつぎは タイトルの「続きから」で さいかいできるぞ。'])}
   catch(e){say('ここでは セーブが できないようです。')}}
 function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVEKEY));if(!d)return false;
-  Object.assign(S,{started:true,comps:d.comps||[],trail:[],map:d.map,x:d.x,y:d.y,dir:d.dir,hero:d.hero,items:d.items,flags:d.flags,chests:d.chests,learned:d.learned||{},stats:d.stats||{},seen:d.seen||{},cleared:d.cleared||{}});rollAll(d.seed||7);const sc=tileAt(S.map,S.x,S.y);if(townIdx(S.map)>=0&&'OKNThvpZ'.includes(sc)){const st={village:[10,17],village2:[9,16],village3:[10,17]}[S.map];if(st){S.x=st[0];S.y=st[1]}}NPCS.cave2[0].gone=!!S.flags.boss;return true}catch(e){return false}}
+  Object.assign(S,{started:true,comps:d.comps||[],trail:[],map:d.map,x:d.x,y:d.y,dir:d.dir,hero:d.hero,items:d.items,flags:d.flags,chests:d.chests,learned:d.learned||{},stats:d.stats||{},seen:d.seen||{},cleared:d.cleared||{},trans:d.trans||0});rollAll(d.seed||7);const sc=tileAt(S.map,S.x,S.y);if(townIdx(S.map)>=0&&'OKNThvpZ'.includes(sc)){const st={village:[10,17],village2:[9,16],village3:[10,17]}[S.map];if(st){S.x=st[0];S.y=st[1]}}NPCS.cave2[0].gone=!!S.flags.boss;return true}catch(e){return false}}
 function hasSave(){try{return !!localStorage.getItem(SAVEKEY)}catch(e){return false}}
 function title(){let t=0,i=0;const opts=(hasSave()?['最初から','続きから（'+saveInfo()+'）']:['最初から']).concat(['ホームに戻る']);AUDIO.play(null);
   const sc={a:'n',nopad:true,noland:true,tap(lx,ly){const j=menuHit(lx,ly,opts.length);if(j>=0){i=j;this.key('a')}},draw(){drawTitleBG();menuDraw(opts,i)},
@@ -71,7 +71,7 @@ function pickHero(done){choose(HEROES.map((h,i)=>heroLabel(i)),ci=>{const c=Math
 function newRun(ci,fresh,comps){S.started=true;S.comps=comps||[];S.trail=[];S.hero={name:(S.hero&&S.hero.name)||'ユウ',cls:ci,lv:1,hp:30,mhp:30,mp:5,mmp:5,atk:8,def:3,exp:0,gold:20,wpn:0,arm:0};
   S.items={herb:2,ether:0};S.flags={};S.chests={};S.seen={};if(fresh){S.learned={};S.stats={};S.cleared={}}
   S.learned=Object.assign({},S.learned,metaGet().learned);S.cleared=Object.assign({},S.cleared,metaGet().cleared);
-  S.map='village';S.x=10;S.y=10;S.dir=0;S.mv=null;S.steps=0;S.sinceBattle=0;NPCS.cave2[0].gone=false;rollAll((Math.random()*1e9)|0);AUDIO.play('town');if(fresh)S.flags.tut=1;if(fresh){let n=0;const iv=setInterval(()=>{if(++n>120||S.flags.tutHint||S.map!=='village'){clearInterval(iv);return}if(S.scenes.length===1&&!S.mv){clearInterval(iv);tutStart()}},500)}}
+  S.map='village';S.trans=0;S.todToast=null;S.x=10;S.y=10;S.dir=0;S.mv=null;S.steps=0;S.sinceBattle=0;NPCS.cave2[0].gone=false;rollAll((Math.random()*1e9)|0);AUDIO.play('town');if(fresh)S.flags.tut=1;if(fresh){let n=0;const iv=setInterval(()=>{if(++n>120||S.flags.tutHint||S.map!=='village'){clearInterval(iv);return}if(S.scenes.length===1&&!S.mv){clearInterval(iv);tutStart()}},500)}}
 function pickComps(ci,done){const list=HEROES.map((h,i)=>i).filter(i=>i!==ci&&metaGet().cleared[i]);if(!list.length){done([]);return}
   const sel=[];const ask=()=>choose(list.map(i=>(sel.includes(i)?'✔ ':'　')+HEROES[i].job+'　'+THEME_K(HEROES[i].id)).concat(['けってい（'+sel.length+'/3にん）']),c=>{const k=Math.max(0,c);
     if(k===list.length){done(sel.slice());return}const id=list[k],at=sel.indexOf(id);if(at>=0)sel.splice(at,1);else if(sel.length>=3){say('なかまは さいだい 3にんまでだ。',ask);return}else sel.push(id);ask()},{x:20,y:20,w:472,cancel:false,a:'c'});
