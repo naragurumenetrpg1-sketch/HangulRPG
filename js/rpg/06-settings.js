@@ -14,7 +14,7 @@ function settingsScene(){let i=0;
     {l:'もじの はやさ',get:()=>['ゆっくり','ふつう','はやい','すぐ'][CFG.speed],chg:d=>{CFG.speed=(CFG.speed+d+4)%4},hint:()=>'かいわの もじが でる はやさ。'},
     {l:'もじの おおきさ',get:()=>['ちいさい','ふつう','おおきい'][CFG.fsize],chg:d=>{CFG.fsize=(CFG.fsize+d+3)%3},sample:true,hint:()=>'かいわと バトルの もじの おおきさ。'},
     canSpeak()?{l:'はつおん（じどう）',get:()=>voiceOn()?'ON':'OFF',chg:()=>{setVoice(!voiceOn());if(voiceOn())speakKo('안녕하세요')},hint:()=>'こたえたあと かんこくごを\nよみあげるよ。'}:null,
-    {l:'まちの えんしゅつ',get:()=>CFG.fx?'ON':'OFF',chg:()=>{CFG.fx=!CFG.fx},hint:()=>'かげ・ひかり・ゆかの しつかん・\nひるから よるへの うつりかわり。\nうごきが おもいときは OFF にしてね。'},
+    {l:'まちの えんしゅつ',get:()=>CFG.fx?'ON':'OFF',chg:()=>{CFG.fx=!CFG.fx},hint:()=>'かげ・ひかり・ランタン・たいまつ・\nひるから よるへの うつりかわり。\nうごきが おもいときは OFF にしてね。'},
     {l:'あそびかた',act:true,run:()=>guideScene(),hint:()=>'そうさの せつめいを もういちど みるよ。'},
     {l:'もどる',act:true,run:()=>close(),hint:()=>''}
   ].filter(Boolean);
