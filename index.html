@@ -1,7 +1,13 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ことだま！ ハングルクエスト</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+KR:wght@500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<meta name="description" content="ことだま！ ハングルクエスト — たたかいながら おぼえる ハングルと韓国語の RPG">
+<meta name="theme-color" content="#0b1226">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ことだま！"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <div id="wrap"><canvas id="c" width="512" height="448"></canvas></div>
 <div id="cross" aria-hidden="true"><div class="ring"></div><div id="knob"></div></div>
 <button id="bB" class="ab" data-k="b" aria-label="Bボタン（メニュー）">B</button>
@@ -22,10 +28,13 @@
 <script src="js/rpg/03-engine.js"></script>
 <script src="js/rpg/04-battle.js"></script>
 <script src="js/rpg/05-talk-menu-save-title.js"></script>
+<script src="js/app-info.js"></script>
 <script src="js/rpg/06-settings.js"></script>
+<script src="js/rpg/06-legal.js"></script>
 <script src="js/rpg/06-town-fx.js"></script>
 <script src="js/korean/vocab-data.js"></script>
 <script src="js/korean/learning-ui.js"></script>
 <script src="js/audio/bgm-se.js"></script>
 <script src="js/rpg/07-loop-input.js"></script>
+<script>if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body></html>
